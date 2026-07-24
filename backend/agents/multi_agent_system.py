@@ -21,10 +21,24 @@ class RouterResponse(BaseModel):
         description="Brief explanation of why this routing decision was made."
     )
 
-from langgraph.checkpoint.memory import MemorySaver
+import os
+import sqlite3
 
-# Shared Memory Checkpointer
-checkpointer = MemorySaver()
+def _create_checkpointer():
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+    os.makedirs(data_dir, exist_ok=True)
+    db_path = os.path.join(data_dir, "checkpoints.db")
+    try:
+        from langgraph.checkpoint.sqlite import SqliteSaver
+        conn = sqlite3.connect(db_path, check_same_thread=False)
+        print(f"[PERSISTENCE] Using SqliteSaver at {db_path}")
+        return SqliteSaver(conn)
+    except ImportError:
+        from langgraph.checkpoint.memory import MemorySaver
+        print("[WARNING] langgraph-checkpoint-sqlite not installed; falling back to MemorySaver")
+        return MemorySaver()
+
+checkpointer = _create_checkpointer()
 
 def create_multi_agent_graph():
     llm = get_llm(model_provider="auto")
