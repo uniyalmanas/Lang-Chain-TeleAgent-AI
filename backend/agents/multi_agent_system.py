@@ -32,20 +32,37 @@ def create_multi_agent_graph():
     # 1. Fast Supervisor Node
     def supervisor_node(state: AgentState):
         user_messages = [msg for msg in state["messages"] if isinstance(msg, HumanMessage)]
-        latest_user_text = user_messages[-1].content.lower() if user_messages else ""
+        latest_user_text = user_messages[-1].content.lower().strip() if user_messages else ""
 
-        # FAST SHORTCUTS: Don't waste LLM calls for general greetings & plan summaries
-        words = set(latest_user_text.split())
-        if words.intersection({"hi", "hello", "hey"}) or any(phrase in latest_user_text for phrase in ["who are you", "what can you do"]):
+        # FAST SHORTCUTS: Intelligently handle greetings, status checks & capability inquiries
+        words = set(latest_user_text.replace("!", "").replace("?", "").replace(".", "").split())
+        greeting_tokens = {"hi", "hii", "hiii", "hello", "hey", "heya", "greetings", "moin", "hallo"}
+        general_queries = [
+            "how are you", "how can you help", "what can you do", "who are you",
+            "help me", "what is your job", "tell me about yourself", "capabilities",
+            "what features", "who build you", "what can i ask"
+        ]
+
+        is_greeting = bool(words.intersection(greeting_tokens))
+        is_general_query = any(q in latest_user_text for q in general_queries)
+        is_short_general = len(words) <= 2 and not any(k in latest_user_text for k in ["wifi", "bill", "plan", "speed", "reboot", "5g", "refund", "credit", "router", "invoice", "fiber", "tv"])
+
+        if is_greeting or is_general_query or is_short_general:
             log_entry = {
                 "node": "supervisor",
-                "action": "Handled greeting directly",
-                "reasoning": "Instant greeting handler."
+                "action": "Answered general query directly",
+                "reasoning": "Executive AI Assistant greeting and capability introduction."
             }
             greeting_msg = AIMessage(
-                content="Hello! I am your **Deutsche Telekom Digital Labs Assistant**. "
-                        "I can help you with broadband/WiFi diagnostics, router rebooting, bill invoice breakdowns, "
-                        "refund credits, and 5G/Magenta TV plan recommendations. How can I help you today?"
+                content=(
+                    "Hello! 👋 I am **TeleAgent AI**, your Deutsche Telekom Digital Labs Customer Operations & Commerce Assistant.\n\n"
+                    "I am equipped with specialized multi-agent tools to assist you with:\n"
+                    "1. 📡 **Speedport & WiFi Diagnostics**: Inspect 5GHz WLAN channel congestion, measure signal strength, and perform automated remote router reboots.\n"
+                    "2. 💳 **Billing & SEPA Refund Resolutions**: Investigate unexpected invoice line items, calculate 19% MwSt. VAT, and process instant SEPA Direct Debit credit refunds.\n"
+                    "3. 🚀 **5G & Fiber Plan Advisor**: Compare MagentaZuhause Fiber 500M/1Gbps plans, MagentaMobil 5G Unlimited, and Speedport Mesh Extenders with Explainable AI (XAI) match scores.\n"
+                    "4. 🎙️ **Voice Assistant & Cart Optimization**: Process natural voice commands and optimize your OneShop cart discounts.\n\n"
+                    "How can I help you today? Ask me about your WiFi speed, bill charges, or plan options!"
+                )
             )
             return {
                 "messages": [greeting_msg],
@@ -87,12 +104,23 @@ def create_multi_agent_graph():
                 next_agent = "FINISH"
                 reason = "Execution completed."
 
-
         log_entry = {
             "node": "supervisor",
             "action": f"Routed query to {next_agent}",
             "reasoning": reason
         }
+
+        # Ensure that if routing to FINISH without prior AIMessage, a helpful response is provided
+        if next_agent == "FINISH" and not any(isinstance(m, AIMessage) for m in state.get("messages", [])):
+            default_reply = AIMessage(
+                content="I am here to assist you! Feel free to ask me to check your Speedport WiFi diagnostics, investigate your monthly invoice, or recommend Magenta 5G & Fiber packages."
+            )
+            return {
+                "messages": [default_reply],
+                "next": "FINISH",
+                "active_agent": "supervisor",
+                "execution_logs": state.get("execution_logs", []) + [log_entry]
+            }
 
         return {
             "next": next_agent,
