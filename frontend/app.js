@@ -6,6 +6,15 @@
 document.addEventListener('DOMContentLoaded', () => {
   const API_URL = '/api/chat';
 
+  // Mobile Hamburger Menu Toggle
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const headerRightControls = document.getElementById('headerRightControls');
+  if (mobileMenuBtn && headerRightControls) {
+    mobileMenuBtn.addEventListener('click', () => {
+      headerRightControls.classList.toggle('show-menu');
+    });
+  }
+
   // Smooth Scroll Active Nav Link Highlight
   const navLinks = document.querySelectorAll('.nav-link');
   const sections = document.querySelectorAll('section');
