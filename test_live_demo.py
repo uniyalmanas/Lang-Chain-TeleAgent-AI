@@ -45,10 +45,11 @@ def run_live_demo_tests():
     # 3. Billing Dispute & HITL Financial Safety Checkpoint
     print("\n[TEST 3/6] POST /api/chat (Billing Refund Request & HITL Checkpoint) ...")
     res3 = client.post("/api/chat", json={
-        "message": "Please refund the €29.75 extra charge for the FIFA pass on my bill.",
+        "message": "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge on my account.",
         "customer_id": "CUST-101",
         "ab_variant": "Variant A (Discount Focus)"
     })
+
 
     assert res3.status_code == 200, f"Billing query failed: {res3.text}"
     data3 = res3.json()
