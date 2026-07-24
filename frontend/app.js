@@ -204,14 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = true;
-        recognition.lang = navigator.language || 'en-US';
+        // Allow Chrome to auto-detect system language without forcing locale override
 
         recognition.onstart = () => {
           isListening = true;
           micBtn.classList.add('listening');
           userInput.value = '';
           userInput.placeholder = "🎙️ Listening to your microphone... Speak now!";
-          appendLog('Voice Assistant', `🎙️ Listening to microphone (${recognition.lang})... Speak now!`, 'system');
+          appendLog('Voice Assistant', `🎙️ Listening to microphone... Speak now!`, 'system');
         };
 
         recognition.onresult = (event) => {
