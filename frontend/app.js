@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let recognition = null;
     let isListening = false;
 
-    micBtn.addEventListener('click', async () => {
+    micBtn.addEventListener('click', () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
       if (!SpeechRecognition) {
@@ -194,19 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Toggle off if currently listening
       if (isListening && recognition) {
-        recognition.stop();
-        return;
-      }
-
-      // Request physical microphone permission first
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Permission granted: stop initial stream track and launch speech recognition
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {
-        console.error('Microphone permission error:', err);
-        appendLog('Voice Assistant', '⚠️ Microphone access denied or no microphone found. Please allow microphone access in your browser.', 'system');
-        alert('Microphone access is blocked. Please click the camera/mic icon in your browser address bar to allow microphone access.');
+        try { recognition.stop(); } catch (e) {}
+        isListening = false;
+        micBtn.classList.remove('listening');
         return;
       }
 
@@ -214,14 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = true;
-        recognition.lang = 'en-US';
+        recognition.lang = navigator.language || 'en-US';
 
         recognition.onstart = () => {
           isListening = true;
           micBtn.classList.add('listening');
           userInput.value = '';
-          userInput.placeholder = "🎙️ Listening to your physical microphone... Speak now!";
-          appendLog('Voice Assistant', '🎙️ Listening to your physical microphone... Speak now!', 'system');
+          userInput.placeholder = "🎙️ Listening to your microphone... Speak now!";
+          appendLog('Voice Assistant', `🎙️ Listening to microphone (${recognition.lang})... Speak now!`, 'system');
         };
 
         recognition.onresult = (event) => {
