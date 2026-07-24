@@ -1,18 +1,10 @@
 import json
 from typing import Any, cast
 from langchain_core.tools import tool
+import chromadb
 import hashlib
 import math
-
-try:
-    import chromadb
-    from chromadb.api.types import EmbeddingFunction
-    HAS_CHROMADB = True
-except (ImportError, Exception):
-    HAS_CHROMADB = False
-    class EmbeddingFunction:
-        def __init__(self):
-            pass
+from chromadb.api.types import EmbeddingFunction, Documents, Embeddings
 
 # Database records for Deutsche Telekom European Subscribers (Bonn, Berlin, Frankfurt)
 MOCK_CUSTOMERS = {
@@ -91,7 +83,7 @@ MOCK_CUSTOMERS = {
     }
 }
 
-class FastVectorEF(EmbeddingFunction):
+class FastVectorEF(EmbeddingFunction[Documents]):
     """
     Lightweight, dependency-free embedding function using hashed token counting.
     NOTE: This is NOT a semantic embedding model — it does not capture synonyms
@@ -101,12 +93,8 @@ class FastVectorEF(EmbeddingFunction):
     def __init__(self):
         super().__init__()
 
-    @staticmethod
-    def name() -> str:
-        return "dtdl_fast_vector_ef"
-
-    def __call__(self, input: Any) -> Any:
-        vecs = []
+    def __call__(self, input: Documents) -> Embeddings:
+        vecs: Embeddings = []
         for text in input:
             tokens = str(text).lower().split()
             v = [0.0] * 64
@@ -123,14 +111,12 @@ _chroma_collection = None
 
 def _get_chroma_collection():
     global _chroma_client, _chroma_collection
-    if not HAS_CHROMADB:
-        return None
     if _chroma_collection is None:
         try:
             _chroma_client = chromadb.EphemeralClient()
             _chroma_collection = _chroma_client.get_or_create_collection(
                 name="dtdl_telecom_rag",
-                embedding_function=FastVectorEF()
+                embedding_function=cast(Any, FastVectorEF())
             )
 
             if _chroma_collection.count() == 0:
