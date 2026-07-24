@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeleAgent AI | Omnichannel Commerce Engine | DTDL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="mode-oneshop">
+  <div class="app-container">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="logo-badge">DT</div>
+        <div class="brand-text">
+          <h1>TeleAgent <span class="badge">OMNICHANNEL AI</span></h1>
+          <p>Deutsche Telekom Digital Labs Engine (India Hub)</p>
+        </div>
+      </div>
+
+      <!-- Channel Switcher (Web OneShop vs Mobile OneApp) -->
+      <div class="channel-switcher">
+        <span class="switcher-label">Channel Context:</span>
+        <button class="channel-btn active" id="btnOneShop">💻 OneShop (Web)</button>
+        <button class="channel-btn" id="btnOneApp">📱 OneApp (Mobile)</button>
+      </div>
+
+      <!-- A/B Recommendation Engine Switcher -->
+      <div class="ab-switcher">
+        <span class="switcher-label">A/B AI Engine:</span>
+        <button class="ab-btn active" id="btnVariantA">Variant A (Discount Focus)</button>
+        <button class="ab-btn" id="btnVariantB">Variant B (Speed Focus)</button>
+      </div>
+
+
+      <div class="header-right">
+        <div class="customer-selector">
+          <label for="customerSelect">Subscriber:</label>
+          <select id="customerSelect">
+            <option value="CUST-101">Rahul Sharma (CUST-101) - Gurugram (Fiber + Billing Dispute)</option>
+            <option value="CUST-102">Priya Patel (CUST-102) - Bengaluru (Truly 5G Unlimited)</option>
+            <option value="CUST-103">Vikram Malhotra (CUST-103) - Mumbai (1 Gbps Enterprise Fiber)</option>
+          </select>
+        </div>
+        <button class="cart-btn" id="openCartBtn">
+          🛒 Cart <span class="cart-badge" id="cartCount">2</span>
+        </button>
+        <div class="system-status">
+          <span class="status-dot online"></span>
+          <span>Synced across channels</span>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="main-content">
+      <!-- Left Panel: Agent Telemetry & Graph Execution -->
+      <aside class="telemetry-panel">
+        <div class="panel-card">
+          <h2><span class="icon">⚡</span> LangGraph Multi-Agent Nodes</h2>
+          <div class="agent-nodes">
+            <div class="agent-node active" id="node-supervisor">
+              <div class="node-icon">🧠</div>
+              <div class="node-info">
+                <h4>Supervisor Agent</h4>
+                <p>Intent & Channel Router</p>
+              </div>
+              <div class="node-status">ACTIVE</div>
+            </div>
+            
+            <div class="node-connector"></div>
+
+            <div class="agent-node" id="node-network_agent">
+              <div class="node-icon">📡</div>
+              <div class="node-info">
+                <h4>Network & Diagnostics</h4>
+                <p>Broadband, WiFi & Mesh</p>
+              </div>
+              <div class="node-status">IDLE</div>
+            </div>
+
+            <div class="agent-node" id="node-billing_agent">
+              <div class="node-icon">💳</div>
+              <div class="node-info">
+                <h4>Billing & Refunds</h4>
+                <p>Invoices & HITL Refunds</p>
+              </div>
+              <div class="node-status">IDLE</div>
+            </div>
+
+            <div class="agent-node" id="node-plan_agent">
+              <div class="node-icon">🚀</div>
+              <div class="node-info">
+                <h4>Commerce & Plan Advisor</h4>
+                <p>Catalog RAG & Bundles</p>
+              </div>
+              <div class="node-status">IDLE</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card execution-card">
+          <h2><span class="icon">🔍</span> Real-Time Execution Logs</h2>
+          <div class="log-container" id="logContainer">
+            <div class="log-entry system-log">
+              <span class="timestamp">System</span>
+              <span class="text">Omnichannel Multi-Agent graph online. Awaiting prompt...</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Panel: AI Chat Interface & App Frame -->
+      <section class="chat-section">
+        <!-- Channel Status Bar -->
+        <div class="channel-indicator-bar" id="channelIndicator">
+          <span class="channel-icon">💻</span>
+          <span class="channel-title">Connected via <strong>DT OneShop Web Storefront</strong></span>
+          <span class="sync-tag">⚡ State Synced (Session ID: session_default)</span>
+        </div>
+
+        <div class="chat-header">
+          <div class="chat-title">
+            <h3>DT Customer Operations Engine</h3>
+            <p>Powered by LangGraph, Tool Calling, and Groq Llama-3.3 / Gemini 1.5</p>
+          </div>
+          <button class="clear-btn" id="clearChatBtn">Clear History</button>
+        </div>
+
+        <!-- Next Best Action Proactive Nudge Banner -->
+        <div class="nba-banner" id="nbaBanner" style="display: flex;">
+          <div class="nba-icon">💡</div>
+          <div class="nba-text">
+            <strong>Next Best Action (Proactive Nudge):</strong>
+            <span id="nbaMessage">Gurugram subscriber detected with weak WiFi signal in Bedroom (-74 dBm). Recommend Smart WiFi 6 Mesh Extender @ ₹149/mo.</span>
+          </div>
+          <button class="nba-btn" id="nbaActionBtn">Apply Recommendation</button>
+        </div>
+
+        <!-- Sample Quick Prompts -->
+        <div class="quick-prompts">
+          <button class="prompt-chip" data-prompt="Check my WiFi speed and router diagnostics in Gurugram right now.">
+            📡 Diagnose Broadband Router
+          </button>
+          <button class="prompt-chip" data-prompt="Why is my bill ₹500 higher this month? Check FIFA pass charge.">
+            💳 Dispute ₹500 FIFA Pass Charge
+          </button>
+          <button class="prompt-chip" data-prompt="My WiFi is slow. Please reboot and optimize my router channel.">
+            ⚡ Remote Channel Reboot
+          </button>
+          <button class="prompt-chip" data-prompt="Suggest a 5G mobile package and Magenta TV 4K pass upgrade.">
+            🚀 Recommend 5G & TV Pass
+          </button>
+          <button class="prompt-chip" data-prompt="Explain why MagentaEins Fiber 1Gbps was recommended for my profile.">
+            🧠 Explainable AI Rationale
+          </button>
+        </div>
+
+        <!-- Human-In-The-Loop Approval Banner (Hidden by Default) -->
+        <div class="hitl-banner" id="hitlBanner" style="display: none;">
+          <div class="hitl-content">
+            <span class="hitl-badge">HUMAN APPROVAL REQUIRED</span>
+            <p id="hitlText">The Billing Agent requests supervisor approval: <strong>Apply ₹500.00 Credit Refund to Rahul Sharma (CUST-101)</strong>.</p>
+            <div class="hitl-actions">
+              <button class="approve-btn" id="approveBtn">✅ Approve & Credit Refund</button>
+              <button class="reject-btn" id="rejectBtn">❌ Cancel Action</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="messages-container" id="messagesContainer">
+          <div class="message assistant-message">
+            <div class="avatar">DT</div>
+            <div class="message-content">
+              <p>Namaste! I am your <strong>Deutsche Telekom Digital Labs Omnichannel AI Assistant</strong>.</p>
+              <p>I can optimize your home broadband, investigate invoice line items, refund improper add-on charges, and tailor personalized 5G & Magenta TV bundles synced across <strong>OneShop (Web)</strong> and <strong>OneApp (Mobile)</strong>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Box -->
+        <div class="input-area">
+          <form id="chatForm">
+            <input type="text" id="userInput" placeholder="Ask about billing, WiFi speed, router reboot, 5G plans, or speak..." autocomplete="off">
+            <button type="button" id="micBtn" class="mic-btn" title="Voice Assistant (Click & Speak)">🎙️</button>
+            <button type="submit" id="sendBtn">
+              <span>Send</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- Right Drawer: Smart Cart & Checkout Optimizer -->
+      <aside class="cart-drawer" id="cartDrawer">
+        <div class="drawer-header">
+          <h3>🛒 Smart Cart Optimizer</h3>
+          <button class="close-drawer" id="closeCartBtn">&times;</button>
+        </div>
+        <div class="drawer-body">
+          <div class="cart-subscriber-tag">
+            <span class="tag-title">Subscriber Context:</span>
+            <strong id="cartCustomerName">Rahul Sharma (Gurugram)</strong>
+            <div class="loyalty-badge" id="cartLoyaltyBadge">Gold Tier (3+ Yrs)</div>
+          </div>
+
+          <div class="cart-items-list" id="cartItemsList">
+            <!-- Items rendered dynamically -->
+          </div>
+
+          <div class="nudge-box" id="cartNudgeBox">
+            <span class="nudge-icon">🎁</span>
+            <span class="nudge-text">Add <strong>Smart Mesh Extender (₹149/mo)</strong> to qualify for ₹150 MagentaEins bundle discount!</span>
+          </div>
+
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span id="cartSubtotal">₹1,499.00</span>
+            </div>
+            <div class="summary-row discount">
+              <span>Bundle Discount:</span>
+              <span id="cartDiscount">-₹0.00</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total Monthly Bill:</span>
+              <span id="cartTotal">₹1,499.00</span>
+            </div>
+          </div>
+
+          <button class="checkout-btn" id="checkoutBtn">🚀 Proceed to Checkout (Synced)</button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Explainable AI (XAI) Rationale Modal -->
+    <div class="modal-overlay" id="xaiModal" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>🧠 Explainable AI (XAI) Recommendation Rationale</h3>
+          <button class="close-modal" id="closeXaiBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="xai-score-card">
+            <div class="score-circle">98.4%</div>
+            <div class="score-meta">
+              <h4>Recommendation Confidence</h4>
+              <p>Matched against DTDL 18M Subscriber Personalization Matrix</p>
+            </div>
+          </div>
+          <div class="xai-section">
+            <h4>Matched Rules & Intent Factors</h4>
+            <ul id="xaiMatchedRules">
+              <li>14 Connected Devices in household (exceeds 10-device congestion threshold)</li>
+              <li>High 4K Video Streaming consumption (FIFA World Cup & Magenta TV)</li>
+              <li>Gold Subscriber Loyalty Tier eligible for instant bundle credit</li>
+            </ul>
+          </div>
+          <div class="xai-section">
+            <h4>Omnichannel Synchronization Status</h4>
+            <p id="xaiChannelStatus">Item automatically saved and accessible on both OneShop Web and OneApp Mobile.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
