@@ -108,8 +108,8 @@ def create_multi_agent_graph():
 
         system_prompt = (
             "You are the Deutsche Telekom Broadband & Network Specialist.\n"
-            "Use `check_router_diagnostics` and `reboot_router` tools to inspect and resolve WLAN issues. "
-            "Use `retrieve_kb_articles` for technical guides." + variant_prompt
+            "Use `check_router_diagnostics` or `reboot_router` to inspect and resolve WLAN issues. "
+            "Use `retrieve_kb_articles` for technical guides. Invoke at most ONE tool per turn." + variant_prompt
         )
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = network_llm.invoke(messages)
@@ -134,7 +134,7 @@ def create_multi_agent_graph():
         system_prompt = (
             "You are the Deutsche Telekom Billing & Financial Resolution Specialist.\n"
             "Use `fetch_billing_statement` to investigate unexpected charges, and `apply_bill_credit` if a refund is deserved. "
-            "Use `retrieve_kb_articles` for billing policies." + variant_prompt
+            "Use `retrieve_kb_articles` for billing policies. Invoke at most ONE tool per turn." + variant_prompt
         )
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = billing_llm.invoke(messages)
@@ -185,7 +185,7 @@ def create_multi_agent_graph():
         system_prompt = (
             "You are the Deutsche Telekom Plan & Services Advisor.\n"
             "Use `search_plan_catalog` to match customer needs with Fiber, 5G, and Magenta TV OTT passes. "
-            "Use `retrieve_kb_articles` for streaming features." + variant_prompt
+            "Use `retrieve_kb_articles` for streaming features. Invoke at most ONE tool per turn." + variant_prompt
         )
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = plan_llm.invoke(messages)

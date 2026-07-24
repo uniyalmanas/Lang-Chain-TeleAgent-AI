@@ -2,303 +2,715 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeleAgent AI | Omnichannel Commerce Engine | DTDL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TeleAgent AI | Deutsche Telekom Omnichannel AI Product Platform</title>
+  <meta name="description" content="Next-Gen Enterprise Multi-Agent AI Engine for Deutsche Telekom AG (DTDL Hub)">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=5.0.0">
 </head>
 <body class="mode-oneshop">
-  <div class="app-container">
-    <!-- Header -->
-    <header class="navbar">
-      <div class="brand">
-        <div class="logo-badge">DT</div>
-        <div class="brand-text">
-          <h1>TeleAgent <span class="badge">OMNICHANNEL AI</span></h1>
-          <p>Deutsche Telekom Digital Labs Engine (India Hub)</p>
+  <!-- Background Glow FX -->
+  <div class="background-ambient">
+    <div class="glow-orb orb-magenta"></div>
+    <div class="glow-orb orb-cyan"></div>
+    <div class="glow-grid"></div>
+  </div>
+
+  <div class="app-wrapper">
+
+    <!-- ===================================================================
+         GLOBAL CORPORATE STICKY NAVBAR
+         =================================================================== -->
+    <header class="site-header">
+      <div class="header-inner">
+        
+        <!-- Brand Logo -->
+        <a href="#hero" class="brand-logo">
+          <div class="logo-box">T</div>
+          <div class="brand-names">
+            <span class="product-title">TeleAgent <span class="highlight">AI</span></span>
+            <span class="company-sub">Deutsche Telekom AG</span>
+          </div>
+        </a>
+
+        <!-- Main Navigation Links -->
+        <nav class="nav-links">
+          <a href="#hero" class="nav-link active">Overview</a>
+          <a href="#solutions" class="nav-link">Capabilities</a>
+          <a href="#playground" class="nav-link">Live AI App</a>
+          <a href="#catalog" class="nav-link">Catalog</a>
+          <a href="#roi" class="nav-link">Enterprise ROI</a>
+        </nav>
+
+        <!-- Navbar Right Controls -->
+        <div class="header-right">
+          
+          <!-- Subscriber Profile Switcher -->
+          <div class="customer-pill">
+            <span class="pill-icon">👤</span>
+            <select id="customerSelect" class="customer-dropdown">
+              <option value="CUST-101">Alex Mercer • Bonn (Fiber 500M + Dispute)</option>
+              <option value="CUST-102">Sarah Connor • Berlin (Unlimited 5G)</option>
+              <option value="CUST-103">Lukas Weber • Frankfurt (1 Gbps Fiber)</option>
+            </select>
+          </div>
+
+          <!-- Smart Cart Trigger -->
+          <button class="cart-btn" id="openCartBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Cart <span class="cart-badge" id="cartCount">2</span>
+          </button>
+
+          <!-- Launch App CTA -->
+          <a href="#playground" class="btn-primary-nav">
+            ⚡ Try AI App
+          </a>
+
         </div>
-      </div>
 
-      <!-- Channel Switcher (Web OneShop vs Mobile OneApp) -->
-      <div class="channel-switcher">
-        <span class="switcher-label">Channel Context:</span>
-        <button class="channel-btn active" id="btnOneShop">💻 OneShop (Web)</button>
-        <button class="channel-btn" id="btnOneApp">📱 OneApp (Mobile)</button>
-      </div>
-
-      <!-- A/B Recommendation Engine Switcher -->
-      <div class="ab-switcher">
-        <span class="switcher-label">A/B AI Engine:</span>
-        <button class="ab-btn active" id="btnVariantA">Variant A (Discount Focus)</button>
-        <button class="ab-btn" id="btnVariantB">Variant B (Speed Focus)</button>
-      </div>
-
-
-      <div class="header-right">
-        <div class="customer-selector">
-          <label for="customerSelect">Subscriber:</label>
-          <select id="customerSelect">
-            <option value="CUST-101">Alex Mercer (CUST-101) - Bonn (MagentaZuhause 500M + Dispute)</option>
-            <option value="CUST-102">Sarah Connor (CUST-102) - Berlin (MagentaMobil Unlimited 5G)</option>
-            <option value="CUST-103">Lukas Weber (CUST-103) - Frankfurt (MagentaZuhause 1 Gbps Fiber)</option>
-          </select>
-        </div>
-        <button class="cart-btn" id="openCartBtn">
-          🛒 Cart <span class="cart-badge" id="cartCount">2</span>
-        </button>
-        <div class="system-status">
-          <span class="status-dot online"></span>
-          <span>BNetzA & GDPR Verified</span>
-        </div>
       </div>
     </header>
 
-    <!-- Main Grid Layout -->
-    <main class="main-content">
-      <!-- Left Panel: Agent Telemetry & Graph Execution -->
-      <aside class="telemetry-panel">
-        <div class="panel-card">
-          <h2><span class="icon">⚡</span> LangGraph Multi-Agent Nodes</h2>
-          <div class="agent-nodes">
-            <div class="agent-node active" id="node-supervisor">
-              <div class="node-icon">🧠</div>
-              <div class="node-info">
-                <h4>Supervisor Agent</h4>
-                <p>Intent & Channel Router</p>
-              </div>
-              <div class="node-status">ACTIVE</div>
+    <!-- ===================================================================
+         1. HERO SECTION (Product Overview & Value Proposition)
+         =================================================================== -->
+    <section class="hero-section" id="hero">
+      <div class="hero-container">
+        
+        <div class="hero-text-col">
+          <div class="tech-badge">
+            <span class="pulse-dot"></span> DEUTSCHE TELEKOM DIGITAL LABS (DTDL) POC
+          </div>
+
+          <h1 class="hero-heading">
+            The Next-Gen <span class="gradient-text">Omnichannel AI Engine</span> for Telecom
+          </h1>
+
+          <p class="hero-subtext">
+            Empower 18M+ subscribers with autonomous Speedport broadband diagnostics, BNetzA-compliant SEPA credit refunds with Human-In-The-Loop safety, and personalized 5G/Fiber plan recommendations.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="#playground" class="hero-btn primary-hero-btn">
+              <span>🚀 Launch AI Operations App</span>
+            </a>
+            <a href="#solutions" class="hero-btn secondary-hero-btn">
+              <span>📖 Explore Capabilities</span>
+            </a>
+          </div>
+
+          <!-- Key Metrics Pills -->
+          <div class="hero-stats-row">
+            <div class="h-stat">
+              <strong class="text-green">-24.5%</strong>
+              <span>Cart Abandonment</span>
             </div>
+            <div class="h-stat-divider"></div>
+            <div class="h-stat">
+              <strong class="text-magenta">+18.2%</strong>
+              <span>Conversion Lift</span>
+            </div>
+            <div class="h-stat-divider"></div>
+            <div class="h-stat">
+              <strong class="text-cyan">45 sec</strong>
+              <span>MTTR Resolution</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Card Interactive Preview -->
+        <div class="hero-card-col">
+          <div class="glass-card hero-preview-card">
+            <div class="preview-header">
+              <div class="preview-title">
+                <span class="live-dot"></span>
+                <span>LangGraph Multi-Agent Topology</span>
+              </div>
+              <span class="badge-mini">LIVE STATE</span>
+            </div>
+
+            <div class="preview-nodes-grid">
+              <div class="p-node active">
+                <span class="p-icon">🧠</span>
+                <div>
+                  <strong>Supervisor Agent</strong>
+                  <p>Intent Classifier</p>
+                </div>
+              </div>
+              <div class="p-node">
+                <span class="p-icon">📡</span>
+                <div>
+                  <strong>Network Agent</strong>
+                  <p>WLAN Diagnostics</p>
+                </div>
+              </div>
+              <div class="p-node">
+                <span class="p-icon">💳</span>
+                <div>
+                  <strong>Billing Agent</strong>
+                  <p>HITL SEPA Refunds</p>
+                </div>
+              </div>
+              <div class="p-node">
+                <span class="p-icon">🚀</span>
+                <div>
+                  <strong>Plan Advisor</strong>
+                  <p>XAI Product RAG</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-footer">
+              <span class="footer-tag">⚡ ChromaDB Vector RAG Engine</span>
+              <a href="#playground" class="preview-link">Open Playground →</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         2. CAPABILITIES & FEATURE SHOWCASE SECTION
+         =================================================================== -->
+    <section class="section-padding capabilities-section" id="solutions">
+      <div class="section-header">
+        <span class="section-tag">ENTERPRISE CAPABILITIES</span>
+        <h2>Built Specifically for European Telecom Operations</h2>
+        <p>Stateful multi-agent intelligence integrated with Deutsche Telekom hardware and regulatory compliance.</p>
+      </div>
+
+      <div class="features-grid">
+
+        <!-- Feature 1: Broadband Diagnostics -->
+        <div class="feature-card">
+          <div class="f-icon-box">📡</div>
+          <h3>Autonomous Speedport Diagnostics</h3>
+          <p>Inspects gateway status, pings 5GHz WLAN bands, detects Channel 6 congestion (-74 dBm signal drops), and executes remote soft reboots automatically.</p>
+          <div class="f-footer">
+            <button class="f-link" onclick="triggerAskAI('Check my Speedport WiFi speed and router diagnostics in Bonn right now.')">Test WLAN Ping →</button>
+          </div>
+        </div>
+
+        <!-- Feature 2: HITL SEPA Refunds -->
+        <div class="feature-card">
+          <div class="f-icon-box">💳</div>
+          <h3>BNetzA & HITL Financial Safety</h3>
+          <p>Under BNetzA regulation, unconfirmed add-on charges are flagged for human operator approval before executing €29.75 instant SEPA Direct Debit refunds.</p>
+          <div class="f-footer">
+            <button class="f-link" onclick="triggerAskAI('Why is my bill €29.75 higher this month? Check FIFA pass charge line items.')">Test Refund Dispute →</button>
+          </div>
+        </div>
+
+        <!-- Feature 3: Explainable AI Commerce -->
+        <div class="feature-card">
+          <div class="f-icon-box">🧠</div>
+          <h3>Explainable AI (XAI) Rationale</h3>
+          <p>Generates transparent confidence scores (98.4% match) and rule justifications for MagentaZuhause Fiber and 5G upgrades based on connected household devices.</p>
+          <div class="f-footer">
+            <button class="f-link" onclick="openXaiModal('PROD-FIBER-1000')">View XAI Engine →</button>
+          </div>
+        </div>
+
+        <!-- Feature 4: ChromaDB RAG Vector Store -->
+        <div class="feature-card">
+          <div class="f-icon-box">⚡</div>
+          <h3>ChromaDB Local Vector RAG</h3>
+          <p>Fast offline vector search across Deutsche Telekom SLA policies, Speedport Wi-Fi 6 manuals, and BNetzA customer protection terms.</p>
+          <div class="f-footer">
+            <button class="f-link" onclick="triggerAskAI('Explain why MagentaEins Fiber 1Gbps was recommended for my profile.')">Search KB Articles →</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         3. LIVE INTERACTIVE AI APP & PLAYGROUND (Core Product Sandbox)
+         =================================================================== -->
+    <section class="section-padding playground-section" id="playground">
+      <div class="section-header">
+        <span class="section-tag">LIVE INTERACTIVE APP</span>
+        <h2>TeleAgent AI Operations Playground</h2>
+        <p>Test real voice recognition, agent routing, tool execution, and human approval guardrails in real time.</p>
+      </div>
+
+      <!-- Controls Toolbar (Viewport Mode & A/B Engine Switcher) -->
+      <div class="playground-toolbar">
+        <div class="toolbar-group">
+          <span class="tb-label">Channel Viewport:</span>
+          <div class="pill-toggle">
+            <button class="channel-btn active" id="btnOneShop">💻 OneShop Web</button>
+            <button class="channel-btn" id="btnOneApp">📱 OneApp Mobile</button>
+          </div>
+        </div>
+
+        <div class="toolbar-group">
+          <span class="tb-label">A/B Recommendation Strategy:</span>
+          <div class="pill-toggle">
+            <button class="ab-btn active" id="btnVariantA">Variant A (Discount Focus)</button>
+            <button class="ab-btn" id="btnVariantB">Variant B (Speed Focus)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive App Workspace Grid -->
+      <div class="playground-grid">
+        
+        <!-- Left: Agent Telemetry & Log Console -->
+        <aside class="playground-aside">
+          <!-- Topology Graph -->
+          <div class="p-card">
+            <div class="p-card-header">
+              <h4>⚡ LangGraph Topology</h4>
+              <span class="live-pill"><span class="blink-dot"></span> ACTIVE</span>
+            </div>
+
+            <div class="agent-nodes-list">
+              <div class="agent-node active" id="node-supervisor">
+                <div class="node-icon-box">🧠</div>
+                <div class="node-info">
+                  <h4>Supervisor Router</h4>
+                  <p>Intent Classifier</p>
+                </div>
+                <div class="node-badge">ACTIVE</div>
+              </div>
+
+              <div class="agent-node" id="node-network_agent">
+                <div class="node-icon-box">📡</div>
+                <div class="node-info">
+                  <h4>Network Agent</h4>
+                  <p>Speedport Diagnostics</p>
+                </div>
+                <div class="node-badge">READY</div>
+              </div>
+
+              <div class="agent-node" id="node-billing_agent">
+                <div class="node-icon-box">💳</div>
+                <div class="node-info">
+                  <h4>Billing Agent</h4>
+                  <p>SEPA Refunds & HITL</p>
+                </div>
+                <div class="node-badge">READY</div>
+              </div>
+
+              <div class="agent-node" id="node-plan_agent">
+                <div class="node-icon-box">🚀</div>
+                <div class="node-info">
+                  <h4>Plan Advisor</h4>
+                  <p>Magenta Catalog RAG</p>
+                </div>
+                <div class="node-badge">READY</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Execution Logs -->
+          <div class="p-card log-p-card">
+            <div class="p-card-header">
+              <h4>🔍 Real-Time Execution Logs</h4>
+            </div>
+            <div class="log-container" id="logContainer">
+              <div class="log-entry system-log">
+                <span class="log-badge badge-sys">SYSTEM</span>
+                <span class="log-text">DT TeleAgent AI Engine Live • LangGraph Checkpointer Active</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right: AI Console & Mobile Shell Container -->
+        <div class="playground-main">
+          <div class="viewport-wrapper" id="viewportWrapper">
             
-            <div class="node-connector"></div>
-
-            <div class="agent-node" id="node-network_agent">
-              <div class="node-icon">📡</div>
-              <div class="node-info">
-                <h4>Network & Diagnostics</h4>
-                <p>Speedport WLAN & Mesh</p>
+            <!-- Mobile Shell Header (Visible in Mobile Viewport Mode) -->
+            <div class="mobile-frame-header">
+              <div class="mobile-notch"></div>
+              <div class="mobile-status-bar">
+                <span class="mobile-time">09:41</span>
+                <div class="mobile-icons">
+                  <span>5G</span>
+                  <div class="mobile-battery"><div class="battery-level"></div></div>
+                </div>
               </div>
-              <div class="node-status">IDLE</div>
-            </div>
-
-            <div class="agent-node" id="node-billing_agent">
-              <div class="node-icon">💳</div>
-              <div class="node-info">
-                <h4>Billing & Refunds</h4>
-                <p>Invoices & SEPA Refunds</p>
+              <div class="mobile-app-bar">
+                <div class="mobile-brand">
+                  <div class="mini-logo">T</div>
+                  <div>
+                    <strong>OneApp Mobile</strong>
+                    <p>Deutsche Telekom AG</p>
+                  </div>
+                </div>
+                <span class="mobile-sync-dot">SYNCED</span>
               </div>
-              <div class="node-status">IDLE</div>
             </div>
 
-            <div class="agent-node" id="node-plan_agent">
-              <div class="node-icon">🚀</div>
-              <div class="node-info">
-                <h4>Commerce & Plan Advisor</h4>
-                <p>Magenta Catalog RAG & XAI</p>
+            <!-- Channel Context Bar -->
+            <div class="channel-indicator-bar" id="channelIndicator">
+              <span class="channel-icon">💻</span>
+              <span class="channel-title">Connected via <strong>OneShop Web Storefront</strong></span>
+              <span class="sync-tag">⚡ State Synced (Session: session_default)</span>
+            </div>
+
+            <!-- Chat Header -->
+            <div class="chat-header">
+              <div class="title-with-avatar">
+                <div class="agent-avatar-main">DT</div>
+                <div>
+                  <h3>Customer Operations AI Console</h3>
+                  <p>Hybrid LLM Routing (Groq Llama 3.3 / Gemini 1.5) • BNetzA SLA Compliant</p>
+                </div>
               </div>
-              <div class="node-status">IDLE</div>
+              <button class="clear-btn" id="clearChatBtn">Clear Session</button>
             </div>
+
+            <!-- Proactive Next Best Action Banner -->
+            <div class="nba-banner" id="nbaBanner" style="display: flex;">
+              <div class="nba-icon">💡</div>
+              <div class="nba-content">
+                <div class="nba-tag">PROACTIVE NEXT BEST ACTION</div>
+                <p id="nbaMessage">Bonn subscriber detected with weak WLAN signal in Master Bedroom (-74 dBm). Recommend Speedport WiFi 6 Mesh Disc @ €4.95/mo.</p>
+              </div>
+              <button class="nba-btn" id="nbaActionBtn">Diagnose Speedport WLAN</button>
+            </div>
+
+            <!-- Quick Prompts Bar -->
+            <div class="quick-prompts-bar">
+              <button class="prompt-chip" data-prompt="Check my Speedport WiFi speed and router diagnostics in Bonn right now.">
+                📡 Diagnose Speedport WLAN
+              </button>
+              <button class="prompt-chip" data-prompt="Why is my bill €29.75 higher this month? Check FIFA pass charge line items.">
+                💳 Dispute €29.75 Bill Charge
+              </button>
+              <button class="prompt-chip" data-prompt="My Speedport WLAN is slow. Please reboot and optimize my router channel.">
+                ⚡ Remote Router Reboot
+              </button>
+              <button class="prompt-chip" data-prompt="Suggest a MagentaMobil 5G package and Magenta TV 4K pass upgrade.">
+                🚀 Recommend 5G & TV Pass
+              </button>
+              <button class="prompt-chip" data-prompt="Explain why MagentaEins Fiber 1Gbps was recommended for my profile.">
+                🧠 Explainable AI Rationale
+              </button>
+            </div>
+
+            <!-- Human-In-The-Loop (HITL) Safety Guardrail Banner -->
+            <div class="hitl-banner" id="hitlBanner" style="display: none;">
+              <div class="hitl-content">
+                <div class="hitl-badge">
+                  <span class="pulse-red"></span> BNETZA HUMAN APPROVAL REQUIRED
+                </div>
+                <p id="hitlText">The Billing Agent requests supervisor confirmation: <strong>Apply €29.75 Instant SEPA Credit Refund to Alex Mercer (CUST-101)</strong>.</p>
+                <div class="hitl-actions">
+                  <button class="approve-btn" id="approveBtn">✅ Approve & Credit SEPA Refund</button>
+                  <button class="reject-btn" id="rejectBtn">❌ Cancel Action</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messagesContainer">
+              <div class="message assistant-message">
+                <div class="avatar">DT</div>
+                <div class="message-content">
+                  <div class="assistant-welcome-header">
+                    <span class="welcome-badge">DEUTSCHE TELEKOM DIGITAL LABS</span>
+                    <h4>Willkommen! How can I assist you today?</h4>
+                  </div>
+                  <p>I am your stateful <strong>Omnichannel AI Customer Operations Engine</strong>. I can analyze your Speedport home router telemetry, resolve invoice disputes, execute instant SEPA refunds with human approval guardrails, and build personalized MagentaEins 5G & Fiber bundles synced across <strong>OneShop (Web)</strong> and <strong>OneApp (Mobile)</strong>.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="input-area">
+              <form id="chatForm">
+                <div class="input-wrapper">
+                  <input type="text" id="userInput" placeholder="Ask about broadband, invoice line items, 5G plans, or speak..." autocomplete="off">
+                  <button type="button" id="micBtn" class="mic-btn" title="Voice Assistant (Web Speech API)">
+                    🎙️
+                  </button>
+                  <button type="submit" id="sendBtn" class="send-btn">
+                    <span>Send</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="mobile-home-bar"></div>
+
           </div>
         </div>
 
-        <!-- Business Impact & Projected ROI Panel -->
-        <div class="panel-card impact-card">
-          <h2><span class="icon">📊</span> Business Outcomes & Projected ROI</h2>
-          <div class="impact-grid">
-            <div class="impact-stat">
-              <span class="stat-value" id="statCart">-24.5%</span>
-              <span class="stat-label">Cart Abandonment</span>
-            </div>
-            <div class="impact-stat">
-              <span class="stat-value" id="statConv">+18.2%</span>
-              <span class="stat-label">Conversion Lift</span>
-            </div>
-            <div class="impact-stat">
-              <span class="stat-value" id="statFcr">+38.0%</span>
-              <span class="stat-label">FCR Auto Resolution</span>
-            </div>
-            <div class="impact-stat">
-              <span class="stat-value" id="statMttr">45s</span>
-              <span class="stat-label">Avg. MTTR (vs 48h)</span>
-            </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         4. ONESHOP DIGITAL PRODUCT CATALOG
+         =================================================================== -->
+    <section class="section-padding catalog-section" id="catalog">
+      <div class="section-header">
+        <span class="section-tag">ONESHOP E-COMMERCE</span>
+        <h2>Magenta Plans & Hardware Catalog</h2>
+        <p>Personalized packages with 19% German MwSt. tax breakdowns and Explainable AI match scores.</p>
+      </div>
+
+      <div class="product-grid">
+        
+        <!-- Fiber 500M -->
+        <div class="product-card featured">
+          <div class="card-badge">POPULAR FIBER</div>
+          <div class="product-icon">🌐</div>
+          <h3>MagentaZuhause XXL Fiber</h3>
+          <p class="product-speed">500 Mbps Download • 100 Mbps Upload</p>
+          <div class="product-price">
+            <span class="price-val">€49.95</span>
+            <span class="price-sub">/ month (+ 19% MwSt.)</span>
+          </div>
+          <ul class="product-features">
+            <li>✓ Sub-10ms Guaranteed Ping SLA</li>
+            <li>✓ Speedport Smart 4 Wi-Fi 6 Gateway Included</li>
+            <li>✓ Free RTL+ Premium Subscription</li>
+          </ul>
+          <div class="xai-chip" onclick="openXaiModal('PROD-FIBER-1000')">
+            <span class="xai-icon">🧠</span> XAI Match Score: <strong>98.4%</strong>
+          </div>
+          <div class="card-actions">
+            <button class="primary-btn" onclick="addToCart('MagentaZuhause 500M Fiber', 49.95, 'Plan')">Add to Cart</button>
+            <button class="secondary-btn" onclick="openXaiModal('PROD-FIBER-1000')">View Rationale</button>
           </div>
         </div>
 
-        <div class="panel-card execution-card">
-          <h2><span class="icon">🔍</span> Real-Time Execution Logs</h2>
-          <div class="log-container" id="logContainer">
-            <div class="log-entry system-log">
-              <span class="timestamp">System</span>
-              <span class="text">Omnichannel Multi-Agent graph online. BNetzA & GDPR compliance active.</span>
-            </div>
+        <!-- MagentaMobil 5G -->
+        <div class="product-card">
+          <div class="card-badge badge-cyan">TRULY UNLIMITED</div>
+          <div class="product-icon">📱</div>
+          <h3>MagentaMobil Speed XL 5G</h3>
+          <p class="product-speed">Unlimited 5G Data • Max 300 Mbps</p>
+          <div class="product-price">
+            <span class="price-val">€49.95</span>
+            <span class="price-sub">/ month (+ 19% MwSt.)</span>
           </div>
-        </div>
-      </aside>
-
-      <!-- Center Panel: AI Chat Interface & App Frame -->
-      <section class="chat-section">
-        <!-- Channel Status Bar -->
-        <div class="channel-indicator-bar" id="channelIndicator">
-          <span class="channel-icon">💻</span>
-          <span class="channel-title">Connected via <strong>DT OneShop Web Storefront</strong></span>
-          <span class="sync-tag">⚡ State Synced (Session ID: session_default)</span>
-        </div>
-
-        <div class="chat-header">
-          <div class="chat-title">
-            <h3>DT Customer Operations Engine</h3>
-            <p>Powered by LangGraph, Speedport Tools, and Groq Llama-3.3 / Gemini 1.5</p>
+          <ul class="product-features">
+            <li>✓ Automatic 5G SA/NSA Prioritization</li>
+            <li>✓ Full EU Roaming incl. UK & Switzerland</li>
+            <li>✓ Multi-SIM Support for Tablet & Smartwatch</li>
+          </ul>
+          <div class="xai-chip" onclick="openXaiModal('PROD-FIBER-1000')">
+            <span class="xai-icon">🧠</span> XAI Match Score: <strong>96.2%</strong>
           </div>
-          <button class="clear-btn" id="clearChatBtn">Clear History</button>
-        </div>
-
-        <!-- Next Best Action Proactive Nudge Banner -->
-        <div class="nba-banner" id="nbaBanner" style="display: flex;">
-          <div class="nba-icon">💡</div>
-          <div class="nba-text">
-            <strong>Next Best Action (Proactive Nudge):</strong>
-            <span id="nbaMessage">Bonn subscriber detected with weak WLAN signal in Bedroom (-74 dBm). Recommend Speedport WiFi 6 Mesh Disc @ €4.95/mo.</span>
-          </div>
-          <button class="nba-btn" id="nbaActionBtn">Apply Recommendation</button>
-        </div>
-
-        <!-- Sample Quick Prompts -->
-        <div class="quick-prompts">
-          <button class="prompt-chip" data-prompt="Check my Speedport WiFi speed and router diagnostics in Bonn right now.">
-            📡 Diagnose Speedport WLAN
-          </button>
-          <button class="prompt-chip" data-prompt="Why is my bill €29.75 higher this month? Check FIFA pass charge line items.">
-            💳 Dispute €29.75 Bill Charge
-          </button>
-          <button class="prompt-chip" data-prompt="My Speedport WLAN is slow. Please reboot and optimize my router channel.">
-            ⚡ Remote Speedport Reboot
-          </button>
-          <button class="prompt-chip" data-prompt="Suggest a MagentaMobil 5G package and Magenta TV 4K pass upgrade.">
-            🚀 Recommend Magenta 5G & TV
-          </button>
-          <button class="prompt-chip" data-prompt="Explain why MagentaEins Fiber 1Gbps was recommended for my profile.">
-            🧠 Explainable AI Rationale
-          </button>
-        </div>
-
-        <!-- Human-In-The-Loop Approval Banner (Hidden by Default) -->
-        <div class="hitl-banner" id="hitlBanner" style="display: none;">
-          <div class="hitl-content">
-            <span class="hitl-badge">BNETZA HUMAN APPROVAL REQUIRED</span>
-            <p id="hitlText">The Billing Agent requests supervisor approval: <strong>Apply €29.75 Instant SEPA Credit Refund to Alex Mercer (CUST-101)</strong>.</p>
-            <div class="hitl-actions">
-              <button class="approve-btn" id="approveBtn">✅ Approve & Credit SEPA Refund</button>
-              <button class="reject-btn" id="rejectBtn">❌ Cancel Action</button>
-            </div>
+          <div class="card-actions">
+            <button class="primary-btn" onclick="addToCart('MagentaMobil Speed XL 5G', 49.95, 'Plan')">Add to Cart</button>
+            <button class="secondary-btn" onclick="openXaiModal('PROD-FIBER-1000')">View Rationale</button>
           </div>
         </div>
 
-        <!-- Messages Area -->
-        <div class="messages-container" id="messagesContainer">
-          <div class="message assistant-message">
-            <div class="avatar">DT</div>
-            <div class="message-content">
-              <p>Willkommen! I am your <strong>Deutsche Telekom Omnichannel AI Assistant</strong>.</p>
-              <p>I can optimize your Speedport home WLAN, investigate monthly invoice line items, refund unconfirmed add-on charges via SEPA Direct Debit, and recommend personalized MagentaEins 5G & TV bundles synced across <strong>OneShop (Web)</strong> and <strong>OneApp (Mobile)</strong>.</p>
-            </div>
+        <!-- Speedport Mesh Disc -->
+        <div class="product-card">
+          <div class="card-badge badge-amber">HARDWARE BOOSTER</div>
+          <div class="product-icon">📡</div>
+          <h3>Speedport Wi-Fi 6 Mesh Disc</h3>
+          <p class="product-speed">Dual-Band 802.11ax • 6000 Mbps</p>
+          <div class="product-price">
+            <span class="price-val">€4.95</span>
+            <span class="price-sub">/ month rental (+ 19% MwSt.)</span>
+          </div>
+          <ul class="product-features">
+            <li>✓ Penetrates Thick European Apartment Walls</li>
+            <li>✓ Fixes Master Bedroom Signal Drops (-74 dBm)</li>
+            <li>✓ Auto Mesh Channel Pairing</li>
+          </ul>
+          <div class="xai-chip" onclick="openXaiModal('PROD-MESH-BOOSTER')">
+            <span class="xai-icon">🧠</span> XAI Match Score: <strong>96.8%</strong>
+          </div>
+          <div class="card-actions">
+            <button class="primary-btn" onclick="addToCart('Speedport Wi-Fi 6 Mesh Disc', 4.95, 'Add-on')">Add Hardware</button>
+            <button class="secondary-btn" onclick="triggerAskAI('Check my Speedport WiFi speed and router diagnostics in Bonn right now.')">Diagnose Router</button>
           </div>
         </div>
 
-
-        <!-- Input Box -->
-        <div class="input-area">
-          <form id="chatForm">
-            <input type="text" id="userInput" placeholder="Ask about billing, WiFi speed, router reboot, 5G plans, or speak..." autocomplete="off">
-            <button type="button" id="micBtn" class="mic-btn" title="Voice Assistant (Click & Speak)">🎙️</button>
-            <button type="submit" id="sendBtn">
-              <span>Send</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
-            </button>
-          </form>
+        <!-- FIFA 4K Pass -->
+        <div class="product-card">
+          <div class="card-badge badge-red">SPORTS PASS</div>
+          <div class="product-icon">⚽</div>
+          <h3>FIFA World Cup 4K Sports Pass</h3>
+          <p class="product-speed">Live 4K UHD HDR Streaming</p>
+          <div class="product-price">
+            <span class="price-val">€25.00</span>
+            <span class="price-sub">/ month flex pass (+ 19% MwSt.)</span>
+          </div>
+          <ul class="product-features">
+            <li>✓ All Live Matches in 4K UHD HDR</li>
+            <li>✓ German & English Commentary Streams</li>
+            <li>✓ Multi-screen Pass on Magenta TV</li>
+          </ul>
+          <div class="xai-chip" onclick="openXaiModal('PROD-FIBER-1000')">
+            <span class="xai-icon">💳</span> Disputed Item in Recent Invoice
+          </div>
+          <div class="card-actions">
+            <button class="primary-btn btn-danger" onclick="triggerAskAI('Why is my bill €29.75 higher this month? Check FIFA pass charge line items.')">Dispute Charge (€29.75)</button>
+            <button class="secondary-btn" onclick="triggerAskAI('Why is my bill €29.75 higher this month? Check FIFA pass charge line items.')">Inspect Charge</button>
+          </div>
         </div>
 
-      </section>
+      </div>
+    </section>
 
-      <!-- Right Drawer: Smart Cart & Checkout Optimizer -->
-      <aside class="cart-drawer" id="cartDrawer">
-        <div class="drawer-header">
-          <h3>🛒 Smart Cart Optimizer</h3>
-          <button class="close-drawer" id="closeCartBtn">&times;</button>
+    <!-- ===================================================================
+         5. EXECUTIVE ROI & CASE STUDY SECTION
+         =================================================================== -->
+    <section class="section-padding roi-section" id="roi">
+      <div class="section-header">
+        <span class="section-tag">BUSINESS IMPACT & ROI</span>
+        <h2>Projected Outcomes for 18M+ European Subscribers</h2>
+        <p>Empirical business lift calculated across Deutsche Telekom's consumer operations.</p>
+      </div>
+
+      <div class="roi-grid">
+        <div class="roi-stat-card">
+          <div class="roi-stat-val text-green">-24.5%</div>
+          <h4>Cart Abandonment Reduction</h4>
+          <p>Smart Cart Optimizer & MagentaEins bundle discount nudges resolve cart drop-offs instantly.</p>
+          <div class="progress-bar-bg"><div class="progress-fill fill-green" style="width: 75%;"></div></div>
         </div>
-        <div class="drawer-body">
-          <div class="cart-subscriber-tag">
-            <span class="tag-title">Subscriber Context:</span>
-            <strong id="cartCustomerName">Rahul Sharma (Gurugram)</strong>
-            <div class="loyalty-badge" id="cartLoyaltyBadge">Gold Tier (3+ Yrs)</div>
-          </div>
 
-          <div class="cart-items-list" id="cartItemsList">
-            <!-- Items rendered dynamically -->
-          </div>
-
-          <div class="nudge-box" id="cartNudgeBox">
-            <span class="nudge-icon">🎁</span>
-            <span class="nudge-text">Add <strong>Smart Mesh Extender (₹149/mo)</strong> to qualify for ₹150 MagentaEins bundle discount!</span>
-          </div>
-
-          <div class="cart-summary">
-            <div class="summary-row">
-              <span>Subtotal:</span>
-              <span id="cartSubtotal">₹1,499.00</span>
-            </div>
-            <div class="summary-row discount">
-              <span>Bundle Discount:</span>
-              <span id="cartDiscount">-₹0.00</span>
-            </div>
-            <div class="summary-row total">
-              <span>Total Monthly Bill:</span>
-              <span id="cartTotal">₹1,499.00</span>
-            </div>
-          </div>
-
-          <button class="checkout-btn" id="checkoutBtn">🚀 Proceed to Checkout (Synced)</button>
+        <div class="roi-stat-card">
+          <div class="roi-stat-val text-magenta">+18.2%</div>
+          <h4>Conversion Lift (NBA)</h4>
+          <p>Explainable AI confidence scores (98.4%) build subscriber trust for high-tier Fiber upgrades.</p>
+          <div class="progress-bar-bg"><div class="progress-fill fill-magenta" style="width: 65%;"></div></div>
         </div>
-      </aside>
-    </main>
 
-    <!-- Explainable AI (XAI) Rationale Modal -->
+        <div class="roi-stat-card">
+          <div class="roi-stat-val text-cyan">+38.0%</div>
+          <h4>First Contact Resolution (FCR)</h4>
+          <p>Automated Speedport Wi-Fi channel tuning and soft reboots resolve broadband issues on first contact.</p>
+          <div class="progress-bar-bg"><div class="progress-fill fill-cyan" style="width: 82%;"></div></div>
+        </div>
+
+        <div class="roi-stat-card">
+          <div class="roi-stat-val text-amber">45 sec</div>
+          <h4>MTTR Resolution Time</h4>
+          <p>Human-In-The-Loop gated SEPA credit approval reduces billing resolution time from 48 hours to 45 seconds.</p>
+          <div class="progress-bar-bg"><div class="progress-fill fill-amber" style="width: 95%;"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         FOOTER
+         =================================================================== -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-brand">
+          <div class="logo-box">T</div>
+          <div>
+            <strong>TeleAgent AI OS</strong>
+            <p>Deutsche Telekom Digital Labs (DTDL) Master Template & POC</p>
+          </div>
+        </div>
+        <div class="footer-copy">
+          © 2026 Deutsche Telekom AG • Bonn HQ • BNetzA & GDPR Article 6 Compliant
+        </div>
+      </div>
+    </footer>
+
+    <!-- Global Smart Cart Drawer -->
+    <aside class="cart-drawer" id="cartDrawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span class="drawer-icon">🛒</span>
+          <h3>Smart Cart Optimizer</h3>
+        </div>
+        <button class="close-drawer" id="closeCartBtn">&times;</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="cart-subscriber-card">
+          <div class="subscriber-avatar">AM</div>
+          <div class="subscriber-details">
+            <span class="tag-title">ACTIVE SUBSCRIBER</span>
+            <strong id="cartCustomerName">Alex Mercer (Bonn HQ)</strong>
+            <div class="loyalty-badge" id="cartLoyaltyBadge">MagentaEins Gold Tier (3+ Yrs)</div>
+          </div>
+        </div>
+
+        <div class="cart-section-title">Purchased Items & Subscriptions</div>
+        <div class="cart-items-list" id="cartItemsList">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="nudge-box" id="cartNudgeBox">
+          <div class="nudge-icon">🎉</div>
+          <div class="nudge-text">Add <strong>Speedport WiFi 6 Mesh Disc (€4.95/mo)</strong> to unlock <strong>-€10.00/mo MagentaEins Bundle Discount</strong>!</div>
+        </div>
+
+        <div class="cart-summary-box">
+          <div class="summary-row">
+            <span>Subtotal (Net):</span>
+            <span id="cartSubtotal">€74.95</span>
+          </div>
+          <div class="summary-row discount">
+            <span>MagentaEins Discount:</span>
+            <span id="cartDiscount">-€10.00</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total">
+            <span>Total Payable / Month:</span>
+            <span id="cartTotal" class="total-price">€77.29</span>
+          </div>
+        </div>
+
+        <button class="checkout-btn" id="checkoutBtn">
+          <span>🚀 Execute 1-Click SEPA Checkout</span>
+          <span class="checkout-sub">Synced via OneShop & OneApp</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Global Explainable AI Modal -->
     <div class="modal-overlay" id="xaiModal" style="display: none;">
       <div class="modal-box">
         <div class="modal-header">
-          <h3>🧠 Explainable AI (XAI) Recommendation Rationale</h3>
+          <div class="modal-title-group">
+            <span class="modal-icon">🧠</span>
+            <h3>Explainable AI (XAI) Rationale Engine</h3>
+          </div>
           <button class="close-modal" id="closeXaiBtn">&times;</button>
         </div>
         <div class="modal-body">
           <div class="xai-score-card">
-            <div class="score-circle">98.4%</div>
+            <div class="score-ring">
+              <span class="score-number">98.4%</span>
+              <span class="score-label">MATCH SCORE</span>
+            </div>
             <div class="score-meta">
-              <h4>Recommendation Confidence</h4>
-              <p>Matched against DTDL 18M Subscriber Personalization Matrix</p>
+              <h4>Recommendation Rationale</h4>
+              <p>Matched against Deutsche Telekom 18M Subscriber Telemetry & Decision Matrix</p>
             </div>
           </div>
+
           <div class="xai-section">
-            <h4>Matched Rules & Intent Factors</h4>
-            <ul id="xaiMatchedRules">
-              <li>14 Connected Devices in household (exceeds 10-device congestion threshold)</li>
-              <li>High 4K Video Streaming consumption (FIFA World Cup & Magenta TV)</li>
-              <li>Gold Subscriber Loyalty Tier eligible for instant bundle credit</li>
+            <h4>Matched Telemetry & Intent Rules</h4>
+            <ul class="xai-rules-list" id="xaiMatchedRules">
+              <li><span class="check-icon">✓</span> 14 Connected Devices in household (exceeds 10-device threshold)</li>
+              <li><span class="check-icon">✓</span> Weak WLAN signal detected in Master Bedroom (-74 dBm)</li>
+              <li><span class="check-icon">✓</span> MagentaEins Gold Member eligible for €10.00/mo bundle savings</li>
             </ul>
           </div>
+
           <div class="xai-section">
-            <h4>Omnichannel Synchronization Status</h4>
-            <p id="xaiChannelStatus">Item automatically saved and accessible on both OneShop Web and OneApp Mobile.</p>
+            <h4>Omnichannel State Sync Status</h4>
+            <p class="xai-status-box" id="xaiChannelStatus">⚡ Synchronized across OneShop Web Storefront and OneApp Mobile Client.</p>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
-  <script src="app.js?v=2.0.0"></script>
+  <script src="app.js?v=5.0.0"></script>
 </body>
 </html>
-
-

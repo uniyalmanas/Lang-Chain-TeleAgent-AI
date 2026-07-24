@@ -107,17 +107,43 @@ def chat_endpoint(request: ChatRequest):
                     "output": msg.content
                 })
 
-        return {
-            "response": final_text,
-            "active_agent": final_state.get("active_agent", "supervisor"),
-            "execution_logs": final_state.get("execution_logs", []),
-            "tool_outputs": tool_outputs,
-            "requires_human_approval": final_state.get("requires_human_approval", False),
-            "pending_tool_call": final_state.get("pending_tool_call")
-        }
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
+        err_msg = str(e)
+        if "rate_limit" in err_msg.lower() or "429" in err_msg or "tool_use_failed" in err_msg:
+            print(f"[RETRY FALLBACK] Switching graph to Gemini provider due to provider error: {err_msg[:100]}...")
+            try:
+                from backend.config import get_llm
+                fallback_llm = get_llm(model_provider="gemini")
+                # Recompile with Gemini fallback
+                from backend.agents.multi_agent_system import create_multi_agent_graph
+                fallback_graph = create_multi_agent_graph()
+                final_state = fallback_graph.invoke(initial_state, config=config)
+            except Exception as fallback_err:
+                raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
+        else:
+            raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
+
+    # Extract final AI response
+    ai_responses = [msg.content for msg in final_state["messages"] if isinstance(msg, AIMessage) and msg.content]
+    final_text = ai_responses[-1] if ai_responses else "Request processed successfully."
+
+    # Extract tool calls & outputs
+    tool_outputs = []
+    for msg in final_state["messages"]:
+        if isinstance(msg, ToolMessage):
+            tool_outputs.append({
+                "tool": getattr(msg, "name", "tool"),
+                "output": msg.content
+            })
+
+    return {
+        "response": final_text,
+        "active_agent": final_state.get("active_agent", "supervisor"),
+        "execution_logs": final_state.get("execution_logs", []),
+        "tool_outputs": tool_outputs,
+        "requires_human_approval": final_state.get("requires_human_approval", False),
+        "pending_tool_call": final_state.get("pending_tool_call")
+    }
 
 @app.get("/api/cart/{customer_id}")
 def get_cart(customer_id: str):
