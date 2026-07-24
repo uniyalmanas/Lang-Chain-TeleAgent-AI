@@ -1,13 +1,8 @@
 import os
 import sys
-import site
 import logging
 
 logger = logging.getLogger("dtdl_teleagent")
-# Ensure user site-packages are in sys.path
-user_site = site.getusersitepackages()
-if user_site not in sys.path:
-    sys.path.insert(0, user_site)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -19,10 +14,10 @@ from backend.agents.multi_agent_system import create_multi_agent_graph
 
 app = FastAPI(title="DTDL TeleAgent - Multi-Agent AI Platform", version="1.0.0")
 
-# Enable CORS for local web development
+# Enable CORS for web development and production deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
