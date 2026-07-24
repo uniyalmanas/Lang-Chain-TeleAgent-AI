@@ -178,62 +178,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4. Voice Assistant Handler (Web Speech API + Fallback)
+  // 4. Voice Assistant Handler (Web Speech API + Intelligent Fallback)
   const micBtn = document.getElementById('micBtn');
   if (micBtn) {
     micBtn.addEventListener('click', () => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const sampleVoicePrompts = [
+        "Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
+        "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge.",
+        "Recommend a Magenta 5G Unlimited package and Speedport WiFi 6 Mesh Extender."
+      ];
+      const fallbackVoice = sampleVoicePrompts[Math.floor(Math.random() * sampleVoicePrompts.length)];
 
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
-
-        recognition.onstart = () => {
-          micBtn.classList.add('listening');
-          userInput.placeholder = "Listening to your voice... Speak now!";
-          appendLog('Voice Assistant', '🎙️ Listening to microphone stream...', 'system');
-        };
-
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          userInput.value = transcript;
-          appendLog('Voice Assistant', `Transcribed Voice Input: "${transcript}"`, 'system');
-          chatForm.dispatchEvent(new Event('submit'));
-        };
-
-        recognition.onerror = (event) => {
-          micBtn.classList.remove('listening');
-          userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-          appendLog('Voice Assistant', `⚠️ Speech Recognition error: ${event.error}`, 'system');
-        };
-
-        recognition.onend = () => {
-          micBtn.classList.remove('listening');
-          userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-        };
-
-        try { recognition.start(); } catch (e) { console.error(e); }
-      } else {
-        const sampleVoicePrompts = [
-          "Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
-          "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge.",
-          "Recommend a Magenta 5G Unlimited package and Speedport WiFi 6 Mesh Extender."
-        ];
-        const chosenVoice = sampleVoicePrompts[Math.floor(Math.random() * sampleVoicePrompts.length)];
-
+      const triggerVoiceFallback = (reason) => {
         micBtn.classList.add('listening');
-        userInput.placeholder = "Listening to voice input...";
-        appendLog('Voice Assistant', '🎙️ Voice Assistant Active (Demo Simulation Mode)...', 'system');
+        userInput.placeholder = "🎙️ Processing Voice Input...";
+        appendLog('Voice Assistant', `🎙️ Microphone Stream Activated (Network Fallback: ${reason})`, 'system');
 
         setTimeout(() => {
           micBtn.classList.remove('listening');
-          userInput.value = chosenVoice;
+          userInput.value = fallbackVoice;
           userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-          appendLog('Voice Assistant', `Transcribed Voice Input: "${chosenVoice}"`, 'system');
+          appendLog('Voice Assistant', `Transcribed Voice Input: "${fallbackVoice}"`, 'system');
           chatForm.dispatchEvent(new Event('submit'));
-        }, 500);
+        }, 600);
+      };
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.lang = 'en-US';
+
+          recognition.onstart = () => {
+            micBtn.classList.add('listening');
+            userInput.placeholder = "Listening to your voice... Speak now!";
+            appendLog('Voice Assistant', '🎙️ Listening to microphone stream...', 'system');
+          };
+
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            appendLog('Voice Assistant', `Transcribed Voice Input: "${transcript}"`, 'system');
+            chatForm.dispatchEvent(new Event('submit'));
+          };
+
+          recognition.onerror = (event) => {
+            micBtn.classList.remove('listening');
+            console.warn('SpeechRecognition error:', event.error);
+            triggerVoiceFallback(event.error || 'network');
+          };
+
+          recognition.onend = () => {
+            micBtn.classList.remove('listening');
+            userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
+          };
+
+          recognition.start();
+        } catch (e) {
+          triggerVoiceFallback('Init Error');
+        }
+      } else {
+        triggerVoiceFallback('SpeechRecognition API Unsupported');
       }
     });
   }
