@@ -140,8 +140,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Core UI Elements
+  const customerSelect = document.getElementById('customerSelect');
+  const btnOneShop = document.getElementById('btnOneShop');
+  const btnOneApp = document.getElementById('btnOneApp');
+  const btnVariantA = document.getElementById('btnVariantA');
+  const btnVariantB = document.getElementById('btnVariantB');
+  const channelIndicator = document.getElementById('channelIndicator');
+  const clearChatBtn = document.getElementById('clearChatBtn');
+
+  const messagesContainer = document.getElementById('messagesContainer');
+  const chatForm = document.getElementById('chatForm');
+  const userInput = document.getElementById('userInput');
+
+  const cartDrawer = document.getElementById('cartDrawer');
+  const openCartBtn = document.getElementById('openCartBtn');
+  const closeCartBtn = document.getElementById('closeCartBtn');
+
+  const xaiModal = document.getElementById('xaiModal');
+  const closeXaiBtn = document.getElementById('closeXaiBtn');
+
+  const nbaActionBtn = document.getElementById('nbaActionBtn');
+
   function appendMessage(text, sender, toolOutputs = []) {
-    if (!messagesContainer) return;
+    const msgContainer = messagesContainer || document.getElementById('messagesContainer');
+    if (!msgContainer) return;
 
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', `${sender}-message`);
@@ -168,27 +191,18 @@ document.addEventListener('DOMContentLoaded', () => {
       speakText(text);
     }
 
-  // Core UI Elements
-  const customerSelect = document.getElementById('customerSelect');
-  const btnOneShop = document.getElementById('btnOneShop');
-  const btnOneApp = document.getElementById('btnOneApp');
-  const btnVariantA = document.getElementById('btnVariantA');
-  const btnVariantB = document.getElementById('btnVariantB');
-  const channelIndicator = document.getElementById('channelIndicator');
-  const clearChatBtn = document.getElementById('clearChatBtn');
+    msgDiv.innerHTML = `
+      <div class="avatar">${avatarContent}</div>
+      <div class="message-content">
+        <p>${formatMarkdown(text)}</p>
+        ${toolCardsHTML}
+        ${feedbackHTML}
+      </div>
+    `;
 
-  const messagesContainer = document.getElementById('messagesContainer');
-  const chatForm = document.getElementById('chatForm');
-  const userInput = document.getElementById('userInput');
-
-  const cartDrawer = document.getElementById('cartDrawer');
-  const openCartBtn = document.getElementById('openCartBtn');
-  const closeCartBtn = document.getElementById('closeCartBtn');
-
-  const xaiModal = document.getElementById('xaiModal');
-  const closeXaiBtn = document.getElementById('closeXaiBtn');
-
-  const nbaActionBtn = document.getElementById('nbaActionBtn');
+    msgContainer.appendChild(msgDiv);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
 
   // Customer Selector Handler
   if (customerSelect) {
