@@ -1,7 +1,9 @@
 import os
 import sys
 import site
+import logging
 
+logger = logging.getLogger("dtdl_teleagent")
 # Ensure user site-packages are in sys.path
 user_site = site.getusersitepackages()
 if user_site not in sys.path:
@@ -20,7 +22,7 @@ app = FastAPI(title="DTDL TeleAgent - Multi-Agent AI Platform", version="1.0.0")
 # Enable CORS for local web development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,43 +109,19 @@ def chat_endpoint(request: ChatRequest):
                     "output": msg.content
                 })
 
+        return {
+            "response": final_text,
+            "active_agent": final_state.get("active_agent", "supervisor"),
+            "execution_logs": final_state.get("execution_logs", []),
+            "tool_outputs": tool_outputs,
+            "requires_human_approval": final_state.get("requires_human_approval", False),
+            "pending_tool_call": final_state.get("pending_tool_call")
+        }
     except Exception as e:
-        err_msg = str(e)
-        if "rate_limit" in err_msg.lower() or "429" in err_msg or "tool_use_failed" in err_msg:
-            print(f"[RETRY FALLBACK] Switching graph to Gemini provider due to provider error: {err_msg[:100]}...")
-            try:
-                from backend.config import get_llm
-                fallback_llm = get_llm(model_provider="gemini")
-                # Recompile with Gemini fallback
-                from backend.agents.multi_agent_system import create_multi_agent_graph
-                fallback_graph = create_multi_agent_graph()
-                final_state = fallback_graph.invoke(initial_state, config=config)
-            except Exception as fallback_err:
-                raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
-        else:
-            raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
-
-    # Extract final AI response
-    ai_responses = [msg.content for msg in final_state["messages"] if isinstance(msg, AIMessage) and msg.content]
-    final_text = ai_responses[-1] if ai_responses else "Request processed successfully."
-
-    # Extract tool calls & outputs
-    tool_outputs = []
-    for msg in final_state["messages"]:
-        if isinstance(msg, ToolMessage):
-            tool_outputs.append({
-                "tool": getattr(msg, "name", "tool"),
-                "output": msg.content
-            })
-
-    return {
-        "response": final_text,
-        "active_agent": final_state.get("active_agent", "supervisor"),
-        "execution_logs": final_state.get("execution_logs", []),
-        "tool_outputs": tool_outputs,
-        "requires_human_approval": final_state.get("requires_human_approval", False),
-        "pending_tool_call": final_state.get("pending_tool_call")
-    }
+        logger.error(f"Agent workflow failure [thread_id={request.thread_id}]: {e}")
+        raise HTTPException(status_code=500, detail="Something went wrong while processing your request. Our team has been notified.")
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
 
 @app.get("/api/cart/{customer_id}")
 def get_cart(customer_id: str):
@@ -178,25 +156,27 @@ def get_business_impact_summary():
         }
     }
 
+
 @app.post("/api/approve-action")
 def approve_action_endpoint(request: ApproveRequest):
     if not request.approved:
-        return {
-            "status": "REJECTED",
-            "message": "Action was cancelled by the human operations agent."
-        }
+        return {"status": "REJECTED", "message": "Action was cancelled by the human operations agent."}
 
-    # Execute approved action directly
+    config = {"configurable": {"thread_id": request.thread_id}}
+    state_snapshot = agent_graph.get_state(config)
+    pending = state_snapshot.values.get("pending_tool_call")
+
+    if not pending:
+        raise HTTPException(status_code=400, detail="No pending action found for this session.")
+
     from backend.tools.telecom_tools import apply_bill_credit
-    result = apply_bill_credit.invoke({"customer_id": request.customer_id, "amount": 29.75, "reason": "Approved by Human Supervisor (BNetzA SLA)"})
+    result = apply_bill_credit.invoke(pending["args"])
 
     return {
         "status": "APPROVED",
-        "message": "Human approval granted. SEPA refund credit of €29.75 applied successfully!",
+        "message": f"Human approval granted. Action '{pending['name']}' executed successfully.",
         "result": result
     }
-
-
 
 # Mount static frontend files if directory exists
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
