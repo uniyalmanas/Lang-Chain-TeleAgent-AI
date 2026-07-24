@@ -65,14 +65,16 @@ def create_multi_agent_graph():
 
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
 
-        # Fast Keyword Fallback for maximum speed
-        if any(k in latest_user_text for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal"]):
+        # Multi-intent routing check: route smoothly through unvisited worker nodes
+        visited_nodes = [log.get("node") for log in state.get("execution_logs", [])]
+
+        if any(k in latest_user_text for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal"]) and "network_agent" not in visited_nodes:
             next_agent = "network_agent"
             reason = "Detected network telemetry intent."
-        elif any(k in latest_user_text for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy"]):
+        elif any(k in latest_user_text for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy"]) and "billing_agent" not in visited_nodes:
             next_agent = "billing_agent"
             reason = "Detected billing dispute intent."
-        elif any(k in latest_user_text for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff"]):
+        elif any(k in latest_user_text for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff"]) and "plan_agent" not in visited_nodes:
             next_agent = "plan_agent"
             reason = "Detected plan catalog intent."
         else:
@@ -83,7 +85,8 @@ def create_multi_agent_graph():
                 reason = res.reasoning
             except Exception:
                 next_agent = "FINISH"
-                reason = "Default fallback."
+                reason = "Execution completed."
+
 
         log_entry = {
             "node": "supervisor",

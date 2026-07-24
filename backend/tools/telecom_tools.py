@@ -107,30 +107,42 @@ def _get_chroma_collection():
     global _chroma_client, _chroma_collection
     if _chroma_collection is None:
         try:
-            _chroma_client = chromadb.Client()
+            _chroma_client = chromadb.EphemeralClient()
             _chroma_collection = _chroma_client.get_or_create_collection(
                 name="dtdl_telecom_rag",
                 embedding_function=FastVectorEF()
             )
+
             if _chroma_collection.count() == 0:
                 kb_docs = [
                     "If WiFi speeds drop below 50% of contracted rate, check Speedport 2.4GHz vs 5GHz channel congestion. Auto-tuning from Channel 6 to Channel 11 resolves 80% of local interference in urban European apartment blocks across Bonn, Berlin, and Frankfurt.",
                     "Under BNetzA regulation and GDPR Article 6, unconfirmed billing add-ons billed without explicit double-opt-in confirmation must be refunded within 24 hours via SEPA Direct Debit credit or invoice balance adjustment with full audit logging.",
-                    "Magenta TV 4K UHD streaming requires a minimum 25 Mbps bandwidth. For multi-room setups, connect Speedport Smart 4 via Mesh WLAN pass-through or direct LAN cable."
+                    "Magenta TV 4K UHD streaming requires a minimum 25 Mbps bandwidth. For multi-room setups, connect Speedport Smart 4 via Mesh WLAN pass-through or direct LAN cable.",
+                    "MagentaZuhause Fiber 500 Mbps and 1 Gbps Gigabit installations include an ONT fiber modem setup with guaranteed sub-10ms ping SLA across Deutsche Telekom's European core network.",
+                    "MagentaMobil Speed XL Unlimited 5G subscribers receive automatic 5G SA/NSA network prioritization, EU roaming incl. Switzerland & UK, and multi-SIM card support for tablets & smartwatches.",
+                    "Per BNetzA guidelines, disputed bill line items under SEPA Direct Debit mandate must be placed in a provisional hold state during Human-in-the-Loop supervisor verification.",
+                    "Speedport Smart 4 gateway supports WPA3 Enterprise encryption, dual-band Wi-Fi 6 (802.11ax) up to 6000 Mbps, and isolated Guest WLAN network setup via the Magenta app.",
+                    "MagentaEins bundle discount combines fixed broadband and mobile post-paid accounts to unlock €10.00/month bill reduction, double mobile data volume, and free mobile-to-landline calls across Europe."
                 ]
                 kb_metadatas = [
                     {"title": "Speedport WiFi 6 Channel Auto-Tuning & 5GHz Setup", "category": "Broadband Diagnostics"},
                     {"title": "BNetzA Regulation & GDPR Compliant Refund SLA", "category": "Billing & Compliance"},
-                    {"title": "Magenta TV 4K UHD Bandwidth & Hardware Requirements", "category": "Magenta TV OTT"}
+                    {"title": "Magenta TV 4K UHD Bandwidth & Hardware Requirements", "category": "Magenta TV OTT"},
+                    {"title": "MagentaZuhause Fiber 500M & 1Gbps Installation SLA", "category": "Fiber Broadband"},
+                    {"title": "MagentaMobil 5G Roaming & Unlimited Pass Terms", "category": "5G Mobile"},
+                    {"title": "SEPA Direct Debit Chargeback & Dispute SLA", "category": "Billing & Compliance"},
+                    {"title": "Speedport WPA3 Security & Guest WLAN Config", "category": "Hardware & Security"},
+                    {"title": "MagentaEins Multi-Product Family Discount Rules", "category": "Magenta Bundles"}
                 ]
                 _chroma_collection.add(
                     documents=kb_docs,
                     metadatas=kb_metadatas,
-                    ids=["doc-01", "doc-02", "doc-03"]
+                    ids=[f"doc-0{i+1}" for i in range(len(kb_docs))]
                 )
         except Exception as e:
             print(f"[WARNING] ChromaDB Vector Store fallback active: {e}")
     return _chroma_collection
+
 
 @tool
 def check_router_diagnostics(customer_id: str = "CUST-101") -> str:
@@ -358,7 +370,7 @@ def retrieve_kb_articles(query: str) -> str:
     collection = _get_chroma_collection()
     if collection:
         try:
-            results = collection.query(query_texts=[query], n_results=2)
+            results = collection.query(query_texts=[query], n_results=3)
             vector_docs = []
             if results and "documents" in results and results["documents"]:
                 for i in range(len(results["documents"][0])):
@@ -372,7 +384,8 @@ def retrieve_kb_articles(query: str) -> str:
                         "vector_engine": "ChromaDB Vector Store (dtdl_telecom_rag)",
                         "content": doc_text
                     })
-                return json.dumps({"rag_engine": "ChromaDB Vector Search Engine", "kb_results": vector_docs}, indent=2)
+                return json.dumps({"rag_engine": "ChromaDB Vector Search Engine", "total_kb_documents": collection.count(), "kb_results": vector_docs}, indent=2)
+
         except Exception as e:
             print(f"ChromaDB query error: {e}")
 
