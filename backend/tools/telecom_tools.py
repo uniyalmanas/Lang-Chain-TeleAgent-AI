@@ -1,17 +1,14 @@
 import json
+import hashlib
+import math
 from typing import Any, cast
 from langchain_core.tools import tool
 try:
     import chromadb
-    from chromadb.api.types import EmbeddingFunction, Documents, Embeddings
-    HAS_CHROMADB = True
-except (ImportError, Exception):
-    HAS_CHROMADB = False
-    class EmbeddingFunction:
-        def __init__(self):
-            pass
-    Documents = Any  # type: ignore
-    Embeddings = Any  # type: ignore
+    from chromadb.api.types import EmbeddingFunction
+except Exception as _chroma_err:
+    chromadb = None
+    EmbeddingFunction = object
 
 # Database records for Deutsche Telekom European Subscribers (Bonn, Berlin, Frankfurt)
 MOCK_CUSTOMERS = {
@@ -34,7 +31,7 @@ MOCK_CUSTOMERS = {
         "eligible_for_refund": True,
         "loyalty_tier": "MagentaEins Gold Member (3+ Years)",
         "iban_sepa": "DE89 3704 0044 0532 0130 00",
-        "gdpr_consent": "Verified",
+        "gdpr_consent": "Verified (BNetzA Compliant)",
         "cart": [
             {"id": "ITEM-01", "name": "MagentaZuhause 500 Mbps Fiber Plan", "price": 49.95, "type": "Plan"},
             {"id": "ITEM-02", "name": "FIFA World Cup 4K Sports Pass", "price": 25.00, "type": "Add-on"}
@@ -44,7 +41,7 @@ MOCK_CUSTOMERS = {
         "name": "Sarah Connor",
         "city": "Berlin, Germany",
         "provider": "Deutsche Telekom AG",
-        "segment": "MagentaMobil 5G Unlimited",
+        "segment": "MagentaMobil Unlimited 5G",
         "plan": "MagentaMobil Speed XL Unlimited 5G",
         "router_model": "Speedport Smart 5G Mesh",
         "ip": "80.187.112.45",
@@ -90,7 +87,7 @@ MOCK_CUSTOMERS = {
     }
 }
 
-class FastVectorEF(EmbeddingFunction[Documents]):
+class FastVectorEF(EmbeddingFunction):
     """
     Lightweight, dependency-free embedding function using hashed token counting.
     NOTE: This is NOT a semantic embedding model — it does not capture synonyms
@@ -100,10 +97,14 @@ class FastVectorEF(EmbeddingFunction[Documents]):
     def __init__(self):
         super().__init__()
 
-    def __call__(self, input: Documents) -> Embeddings:
-        vecs: Embeddings = []
+    @staticmethod
+    def name():
+        return "dtdl_fast_vector_ef"
+
+    def __call__(self, input):
+        vecs = []
         for text in input:
-            tokens = str(text).lower().split()
+            tokens = text.lower().split()
             v = [0.0] * 64
             for tok in tokens:
                 idx = int(hashlib.md5(tok.encode()).hexdigest(), 16) % 64
@@ -118,14 +119,12 @@ _chroma_collection = None
 
 def _get_chroma_collection():
     global _chroma_client, _chroma_collection
-    if not HAS_CHROMADB:
-        return None
     if _chroma_collection is None:
         try:
             _chroma_client = chromadb.EphemeralClient()
             _chroma_collection = _chroma_client.get_or_create_collection(
                 name="dtdl_telecom_rag",
-                embedding_function=cast(Any, FastVectorEF())
+                embedding_function=FastVectorEF()
             )
 
             if _chroma_collection.count() == 0:
@@ -375,6 +374,21 @@ def optimize_smart_cart(customer_id: str = "CUST-101") -> str:
         "applied_nudge": bundle_nudge,
         "sepa_payment_ready": True
     }, indent=2)
+
+def add_item_to_cart(customer_id: str, name: str, price: float, item_type: str = "Add-on") -> dict:
+    customer = MOCK_CUSTOMERS.get(customer_id, MOCK_CUSTOMERS["CUST-101"])
+    if "cart" not in customer:
+        customer["cart"] = []
+    item_id = f"ITEM-{len(customer['cart']) + 1:02d}"
+    new_item = {"id": item_id, "name": name, "price": price, "type": item_type}
+    customer["cart"].append(new_item)
+    return json.loads(optimize_smart_cart.invoke({"customer_id": customer_id}))
+
+def remove_item_from_cart(customer_id: str, item_id: str) -> dict:
+    customer = MOCK_CUSTOMERS.get(customer_id, MOCK_CUSTOMERS["CUST-101"])
+    if "cart" in customer:
+        customer["cart"] = [item for item in customer["cart"] if item.get("id") != item_id and item.get("name") != item_id]
+    return json.loads(optimize_smart_cart.invoke({"customer_id": customer_id}))
 
 @tool
 def retrieve_kb_articles(query: str) -> str:
