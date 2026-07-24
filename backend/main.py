@@ -45,6 +45,10 @@ class ApproveRequest(BaseModel):
     approved: bool = True
     customer_id: str = "CUST-101"
 
+class FeedbackRequest(BaseModel):
+    customer_id: str = "CUST-101"
+    rating: str = "like"
+
 @app.get("/api/health")
 def health_check():
     return {
@@ -54,15 +58,15 @@ def health_check():
     }
 
 @app.post("/api/feedback")
-def submit_feedback(payload: dict):
-    print(f"[RLHF FEEDBACK LOGGED] {payload}")
-    rating = payload.get("rating", "like")
-    reward_signal = 1.0 if rating == "like" else -1.0
+def submit_feedback(request: FeedbackRequest):
+    print(f"[RLHF FEEDBACK] customer={request.customer_id} rating={request.rating}")
     return {
         "status": "logged",
-        "reward_signal": reward_signal,
-        "received": payload
+        "customer_id": request.customer_id,
+        "rating": request.rating,
+        "reward_signal": 1.0 if request.rating == "like" else -1.0
     }
+
 
 @app.post("/api/chat")
 def chat_endpoint(request: ChatRequest):
