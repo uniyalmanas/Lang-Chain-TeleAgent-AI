@@ -57,6 +57,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // State Variables
   let currentChannel = 'OneShop Web';
   let currentAbVariant = 'Variant A (Discount Focus)';
+  let threadId = sessionStorage.getItem('teleagent_thread_id');
+  if (!threadId) {
+    threadId = crypto.randomUUID();
+    sessionStorage.setItem('teleagent_thread_id', threadId);
+  }
+
+  function sessionLabel() {
+    return threadId.slice(0, 8);
+  }
+
+  function updateChannelIndicator() {
+    if (!channelIndicator) return;
+    const isMobile = currentChannel === 'OneApp Mobile';
+    channelIndicator.innerHTML = `
+      <span class="channel-icon">${isMobile ? '📱' : '💻'}</span>
+      <span class="channel-title">Connected via <strong>${isMobile ? 'OneApp Mobile Client' : 'OneShop Web Storefront'}</strong></span>
+      <span class="sync-tag">⚡ State Synced (Session: ${sessionLabel()})</span>
+    `;
+  }
 
   // Core UI Elements
   const customerSelect = document.getElementById('customerSelect');
@@ -80,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const nbaActionBtn = document.getElementById('nbaActionBtn');
 
+  updateChannelIndicator();
+
   // Customer Selector Handler
   if (customerSelect) {
     customerSelect.addEventListener('change', () => {
@@ -96,13 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnOneApp.classList.remove('active');
       document.body.className = 'mode-oneshop';
       currentChannel = 'OneShop Web';
-      if (channelIndicator) {
-        channelIndicator.innerHTML = `
-          <span class="channel-icon">💻</span>
-          <span class="channel-title">Connected via <strong>OneShop Web Storefront</strong></span>
-          <span class="sync-tag">⚡ State Synced (Session: session_default)</span>
-        `;
-      }
+      updateChannelIndicator();
       appendLog('Omnichannel Sync', 'Switched viewport context to OneShop Web Storefront', 'system');
     });
 
@@ -111,13 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnOneShop.classList.remove('active');
       document.body.className = 'mode-oneapp';
       currentChannel = 'OneApp Mobile';
-      if (channelIndicator) {
-        channelIndicator.innerHTML = `
-          <span class="channel-icon">📱</span>
-          <span class="channel-title">Connected via <strong>OneApp Mobile Client</strong></span>
-          <span class="sync-tag">⚡ State Synced (Session: session_default)</span>
-        `;
-      }
+      updateChannelIndicator();
       appendLog('Omnichannel Sync', 'Switched viewport context to OneApp Mobile Client', 'system');
     });
   }
@@ -156,6 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Clear Session History
   if (clearChatBtn) {
     clearChatBtn.addEventListener('click', () => {
+      threadId = crypto.randomUUID();
+      sessionStorage.setItem('teleagent_thread_id', threadId);
+      updateChannelIndicator();
       messagesContainer.innerHTML = `
         <div class="message assistant-message">
           <div class="avatar"><img src="public/logo.png" alt="Logo" style="max-width: 100%; max-height: 100%;"></div>
@@ -168,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
       `;
-      appendLog('Session Engine', 'Cleared active chat history and graph state', 'system');
+      appendLog('Session Engine', `New session started (${sessionLabel()})`, 'system');
     });
   }
 
@@ -247,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch('/api/approve-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ approved: true, customer_id: customerId })
+          body: JSON.stringify({ approved: true, customer_id: customerId, thread_id: threadId })
         });
         const data = await res.json();
         appendMessage(`✅ **Action Executed**: ${data.message}`, 'assistant');
@@ -290,7 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: promptText, customer_id: customerId, ab_variant: currentAbVariant })
+          body: JSON.stringify({
+            message: promptText,
+            customer_id: customerId,
+            ab_variant: currentAbVariant,
+            thread_id: threadId,
+          })
         });
 
         const data = await response.json();
