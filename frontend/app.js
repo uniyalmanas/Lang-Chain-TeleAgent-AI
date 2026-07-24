@@ -245,7 +245,29 @@ document.addEventListener('DOMContentLoaded', () => {
           if (event.error === 'no-speech') {
             appendLog('Voice Assistant', '⚠️ No speech detected. Click mic to try speaking again.', 'system');
           } else if (event.error === 'network') {
-            appendLog('Voice Assistant', '⚠️ Chrome Speech API network blocked on this machine (speech.googleapis.com unreachable). Please check network/adblocker or type query manually.', 'system');
+            appendLog('Voice Assistant', '⚠️ Chrome Speech API network blocked on this machine (speech.googleapis.com unreachable). Opened Voice Query Selector.', 'system');
+            
+            // Present interactive voice query selection modal so the user is never stuck
+            const promptChoices = [
+              "📡 Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
+              "💳 Why is my bill €29.75 higher this month? Check FIFA pass charge.",
+              "🚀 Suggest a MagentaMobil 5G package and Speedport WiFi 6 Mesh Extender."
+            ];
+
+            const selected = prompt(
+              "🎙️ Voice Assistant Network Blocked on this Browser.\n" +
+              "Select or type a voice query below to submit:\n\n" +
+              "1. Check my Speedport WiFi speed\n" +
+              "2. Dispute €29.75 FIFA charge\n" +
+              "3. Recommend 5G & Mesh Extender",
+              "Check my Speedport WiFi speed and router diagnostics in Bonn right now."
+            );
+
+            if (selected && selected.trim()) {
+              userInput.value = selected.trim();
+              appendLog('Voice Assistant', `Transcribed Voice Input: "${selected.trim()}"`, 'system');
+              chatForm.dispatchEvent(new Event('submit'));
+            }
           } else {
             appendLog('Voice Assistant', `⚠️ Speech recognition stopped: ${event.error}`, 'system');
           }
