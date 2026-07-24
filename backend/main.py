@@ -178,6 +178,141 @@ def approve_action_endpoint(request: ApproveRequest):
         "result": result
     }
 
+# ==============================================================================
+# MODEL CONTEXT PROTOCOL (MCP) JSON-RPC 2.0 SERVER ENDPOINT
+# ==============================================================================
+
+class MCPRequest(BaseModel):
+    jsonrpc: str = "2.0"
+    method: str
+    params: dict = {}
+    id: Optional[Union[str, int]] = 1
+
+@app.post("/api/mcp")
+def mcp_jsonrpc_endpoint(request: MCPRequest):
+    """
+    Standardized Model Context Protocol (MCP) JSON-RPC 2.0 Server Endpoint.
+    Allows external MCP clients (Claude Desktop, Cursor, AI agents) to discover 
+    and invoke Deutsche Telekom tools, RAG resources, and prompts over MCP.
+    """
+    method = request.method
+    params = request.params or {}
+
+    # 1. MCP Tools Discovery: tools/list
+    if method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": request.id,
+            "result": {
+                "tools": [
+                    {
+                        "name": "check_router_diagnostics",
+                        "description": "Pings Speedport router, checks 5GHz WLAN channel congestion, signal dBm, and device count.",
+                        "inputSchema": {"type": "object", "properties": {"customer_id": {"type": "string", "default": "CUST-101"}}}
+                    },
+                    {
+                        "name": "reboot_router",
+                        "description": "Performs remote soft reboot of Speedport gateway and switches channel from 6 to 11.",
+                        "inputSchema": {"type": "object", "properties": {"customer_id": {"type": "string", "default": "CUST-101"}}}
+                    },
+                    {
+                        "name": "fetch_billing_statement",
+                        "description": "Retrieves line item statement breakdown, 19% MwSt VAT splits, and unrecognized charges.",
+                        "inputSchema": {"type": "object", "properties": {"customer_id": {"type": "string", "default": "CUST-101"}}}
+                    },
+                    {
+                        "name": "apply_bill_credit",
+                        "description": "Applies instant SEPA Direct Debit credit refund to customer account under BNetzA SLA.",
+                        "inputSchema": {"type": "object", "properties": {"customer_id": {"type": "string"}, "amount": {"type": "number"}, "reason": {"type": "string"}}}
+                    },
+                    {
+                        "name": "search_plan_catalog",
+                        "description": "Searches product catalog for Magenta Fiber, 5G Unlimited, and TV passes.",
+                        "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}}
+                    },
+                    {
+                        "name": "get_explainable_recommendation",
+                        "description": "Generates Explainable AI (XAI) rationale scores and device threshold rules.",
+                        "inputSchema": {"type": "object", "properties": {"product_id": {"type": "string"}, "customer_id": {"type": "string"}}}
+                    },
+                    {
+                        "name": "optimize_smart_cart",
+                        "description": "Calculates 19% MwSt. VAT, applies MagentaEins bundle discounts, and returns total.",
+                        "inputSchema": {"type": "object", "properties": {"customer_id": {"type": "string"}}}
+                    },
+                    {
+                        "name": "retrieve_kb_articles",
+                        "description": "Performs ChromaDB vector RAG search over Deutsche Telekom KB articles and BNetzA SLAs.",
+                        "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}}
+                    }
+                ]
+            }
+        }
+
+    # 2. MCP Tool Execution: tools/call
+    elif method == "tools/call":
+        tool_name = params.get("name")
+        args = params.get("arguments", {})
+
+        from backend.tools import telecom_tools
+        if hasattr(telecom_tools, tool_name):
+            tool_func = getattr(telecom_tools, tool_name)
+            result = tool_func.invoke(args)
+            return {
+                "jsonrpc": "2.0",
+                "id": request.id,
+                "result": {"content": [{"type": "text", "text": str(result)}]}
+            }
+        else:
+            return {
+                "jsonrpc": "2.0",
+                "id": request.id,
+                "error": {"code": -32601, "message": f"MCP Tool '{tool_name}' not found."}
+            }
+
+    # 3. MCP Resources Discovery: resources/list
+    elif method == "resources/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": request.id,
+            "result": {
+                "resources": [
+                    {"uri": "telecom://chromadb/kb-articles", "name": "ChromaDB Telecom Knowledge Base RAG Docs", "mimeType": "application/json"},
+                    {"uri": "telecom://subscribers/mock-customers", "name": "Subscriber Profile & Telemetry Records", "mimeType": "application/json"}
+                ]
+            }
+        }
+
+    # 4. MCP Prompts Discovery: prompts/list
+    elif method == "prompts/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": request.id,
+            "result": {
+                "prompts": [
+                    {"name": "diagnose_speedport_wlan", "description": "Run Speedport router diagnostics and WLAN channel tuning"},
+                    {"name": "dispute_sepa_invoice", "description": "Investigate unrecognized charge and request HITL SEPA credit refund"}
+                ]
+            }
+        }
+
+    else:
+        return {
+            "jsonrpc": "2.0",
+            "id": request.id,
+            "error": {"code": -32601, "message": f"Unsupported MCP Method '{method}'."}
+        }
+
+@app.get("/api/mcp")
+def mcp_info_endpoint():
+    return {
+        "status": "online",
+        "protocol": "Model Context Protocol (MCP) JSON-RPC 2.0",
+        "server": "Deutsche Telekom Digital Labs TeleAgent MCP Server",
+        "endpoints": {"jsonrpc_post": "/api/mcp"},
+        "supported_methods": ["tools/list", "tools/call", "resources/list", "prompts/list"]
+    }
+
 # Mount static frontend files if directory exists
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(frontend_path):
