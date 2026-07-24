@@ -59,16 +59,17 @@ def _build_chat_input(graph, request: ChatRequest, config: dict) -> dict:
         "messages": [HumanMessage(content=request.message)],
         "customer_id": request.customer_id,
         "ab_variant": request.ab_variant,
+        # Reset per-turn routing/HITL flags so multi-intent and follow-up queries route cleanly.
+        "execution_logs": [],
+        "requires_human_approval": False,
+        "pending_tool_call": None,
     }
 
-    # First message in a thread: seed defaults. Follow-up turns rely on checkpoint.
+    # First message in a thread: seed defaults. Follow-up turns rely on checkpoint for messages.
     if graph.checkpointer.get_tuple(config) is None:
         input_state.update({
             "next": "supervisor",
             "active_agent": "supervisor",
-            "execution_logs": [],
-            "requires_human_approval": False,
-            "pending_tool_call": None,
         })
 
     return input_state

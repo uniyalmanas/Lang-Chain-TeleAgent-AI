@@ -40,6 +40,28 @@ def _create_checkpointer():
 
 checkpointer = _create_checkpointer()
 
+NETWORK_INTENT_KEYWORDS = ("wifi", "router", "speed", "slow", "reboot", "internet", "signal")
+BILLING_INTENT_KEYWORDS = ("bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy")
+PLAN_INTENT_KEYWORDS = ("plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff")
+
+AGENT_INTENT_MAP = (
+    ("network_agent", NETWORK_INTENT_KEYWORDS),
+    ("billing_agent", BILLING_INTENT_KEYWORDS),
+    ("plan_agent", PLAN_INTENT_KEYWORDS),
+)
+
+
+def _pending_agents_for_query(query: str, visited_nodes: list[str]) -> list[str]:
+    """Return worker agents that match the query and have not run yet this turn."""
+    pending = []
+    for agent_name, keywords in AGENT_INTENT_MAP:
+        if agent_name in visited_nodes:
+            continue
+        if any(keyword in query for keyword in keywords):
+            pending.append(agent_name)
+    return pending
+
+
 def create_multi_agent_graph(model_provider: str = "auto"):
     llm = get_llm(model_provider=model_provider)
 
@@ -79,18 +101,19 @@ def create_multi_agent_graph(model_provider: str = "auto"):
 
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
 
-        # Multi-intent routing check: route smoothly through unvisited worker nodes
+        # Multi-intent routing: walk unvisited worker nodes for each detected intent
         visited_nodes = [log.get("node") for log in state.get("execution_logs", [])]
+        pending_agents = _pending_agents_for_query(latest_user_text, visited_nodes)
 
-        if any(k in latest_user_text for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal"]) and "network_agent" not in visited_nodes:
-            next_agent = "network_agent"
-            reason = "Detected network telemetry intent."
-        elif any(k in latest_user_text for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy"]) and "billing_agent" not in visited_nodes:
-            next_agent = "billing_agent"
-            reason = "Detected billing dispute intent."
-        elif any(k in latest_user_text for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff"]) and "plan_agent" not in visited_nodes:
-            next_agent = "plan_agent"
-            reason = "Detected plan catalog intent."
+        if pending_agents:
+            next_agent = pending_agents[0]
+            if len(pending_agents) > 1:
+                reason = (
+                    f"Multi-intent query detected. Routing to {next_agent}; "
+                    f"remaining: {', '.join(pending_agents[1:])}."
+                )
+            else:
+                reason = f"Detected {next_agent.replace('_', ' ')} intent."
         else:
             try:
                 structured_llm = llm.with_structured_output(RouterResponse)
@@ -99,7 +122,7 @@ def create_multi_agent_graph(model_provider: str = "auto"):
                 reason = res.reasoning
             except Exception:
                 next_agent = "FINISH"
-                reason = "Execution completed."
+                reason = "All detected intents handled for this query."
 
 
         log_entry = {
@@ -220,12 +243,14 @@ def create_multi_agent_graph(model_provider: str = "auto"):
     # 3. Tool Execution Node
     tool_node = ToolNode(ALL_TOOLS)
 
-    # 4. Optimized Routing logic: Go straight to END if no more tool calls needed!
+    # 4. Worker routing: tools loop, then supervisor for remaining multi-intent agents
     def should_continue_worker(state: AgentState) -> str:
         last_message = state["messages"][-1]
         if hasattr(last_message, "tool_calls") and last_message.tool_calls:
             return "tools"
-        return END  # Direct termination once answer is generated!
+        if state.get("requires_human_approval"):
+            return END
+        return "supervisor"
 
     # 5. Build StateGraph
     workflow = StateGraph(AgentState)
@@ -249,9 +274,21 @@ def create_multi_agent_graph(model_provider: str = "auto"):
         }
     )
 
-    workflow.add_conditional_edges("network_agent", should_continue_worker, {"tools": "tools", END: END})
-    workflow.add_conditional_edges("billing_agent", should_continue_worker, {"tools": "tools", END: END})
-    workflow.add_conditional_edges("plan_agent", should_continue_worker, {"tools": "tools", END: END})
+    workflow.add_conditional_edges(
+        "network_agent",
+        should_continue_worker,
+        {"tools": "tools", "supervisor": "supervisor", END: END},
+    )
+    workflow.add_conditional_edges(
+        "billing_agent",
+        should_continue_worker,
+        {"tools": "tools", "supervisor": "supervisor", END: END},
+    )
+    workflow.add_conditional_edges(
+        "plan_agent",
+        should_continue_worker,
+        {"tools": "tools", "supervisor": "supervisor", END: END},
+    )
 
     # Dynamically return from tool execution to whichever worker agent invoked the tool
     def route_tool_output(state: AgentState) -> str:
