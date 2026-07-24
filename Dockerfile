@@ -1,7 +1,7 @@
 # Use official lightweight Python base image
 FROM python:3.11-slim
 
-# Set working directory inside container.
+# Set working directory inside container
 WORKDIR /app
 
 # Prevent Python from writing .pyc files & buffer stdout/stderr
