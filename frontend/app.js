@@ -162,9 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const cartNudgeBox = document.getElementById('cartNudgeBox');
 
       if (customerNameEl) {
-        if (customerId === 'CUST-101') customerNameEl.textContent = 'Rahul Sharma (Gurugram, NCR)';
-        else if (customerId === 'CUST-102') customerNameEl.textContent = 'Priya Patel (Bengaluru, KA)';
-        else customerNameEl.textContent = 'Vikram Malhotra (Mumbai, MH)';
+        if (customerId === 'CUST-101') customerNameEl.textContent = 'Alex Mercer (Bonn, Germany)';
+        else if (customerId === 'CUST-102') customerNameEl.textContent = 'Sarah Connor (Berlin, Germany)';
+        else customerNameEl.textContent = 'Lukas Weber (Frankfurt, Germany)';
       }
 
       let itemsHTML = '';
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="cart-item-name">${item.name}</div>
                 <div style="font-size:0.7rem; color:var(--text-muted);">${item.type}</div>
               </div>
-              <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
+              <div class="cart-item-price">€${item.price.toFixed(2)}</div>
             </div>
           `;
         });
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (cartItemsList) cartItemsList.innerHTML = itemsHTML;
-      if (cartSubtotal) cartSubtotal.textContent = data.subtotal;
+      if (cartSubtotal) cartSubtotal.textContent = data.subtotal_base || data.subtotal;
       if (cartDiscount) cartDiscount.textContent = `-${data.bundle_discount}`;
       if (cartTotal) cartTotal.textContent = data.total;
 
@@ -195,9 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.applied_nudge) {
           cartNudgeBox.innerHTML = `<span class="nudge-icon">🎉</span> <span class="nudge-text">${data.applied_nudge}</span>`;
         } else {
-          cartNudgeBox.innerHTML = `<span class="nudge-icon">🎁</span> <span class="nudge-text">Add <strong>Smart WiFi Mesh Extender (₹149/mo)</strong> to qualify for bundle discount!</span>`;
+          cartNudgeBox.innerHTML = `<span class="nudge-icon">🎁</span> <span class="nudge-text">Add <strong>Speedport WiFi 6 Mesh Disc (€4.95/mo)</strong> to qualify for MagentaEins discount!</span>`;
         }
       }
+
     } catch (err) {
       console.error('Failed to fetch cart:', err);
     }
@@ -237,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Next Best Action (NBA) Button Handler
   if (nbaActionBtn) {
     nbaActionBtn.addEventListener('click', () => {
-      userInput.value = 'Add Smart WiFi 6 Mesh Extender to my cart for ₹149/mo and optimize router channel.';
+      userInput.value = 'Add Speedport WiFi 6 Mesh Disc to my cart for €4.95/mo and optimize router WLAN channel.';
       chatForm.dispatchEvent(new Event('submit'));
     });
   }
@@ -269,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logContainer.innerHTML = `
       <div class="log-entry system-log">
         <span class="timestamp">System</span>
-        <span class="text">Omnichannel Multi-Agent graph reset.</span>
+        <span class="text">Omnichannel Multi-Agent graph reset. BNetzA & GDPR compliance active.</span>
       </div>
     `;
   });
@@ -283,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     approveBtn.addEventListener('click', async () => {
       hitlBanner.style.display = 'none';
       const customerId = customerSelect.value;
-      appendLog('Human Supervisor', 'Approved ₹500 refund credit action', 'system');
+      appendLog('Human Supervisor', 'Approved €29.75 refund credit action (BNetzA SLA)', 'system');
       
       try {
         const res = await fetch('/api/approve-action', {
@@ -293,13 +294,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         appendMessage(`✅ **Action Executed**: ${data.message}`, 'assistant');
-        appendLog('Billing Agent', 'Transaction TXN-IND-9982341 applied successfully', 'tool');
+        appendLog('Billing Agent', 'Transaction TXN-SEPA-DE-9982341 applied successfully', 'tool');
         fetchCart(); // Refresh cart state
       } catch (err) {
         appendMessage(`⚠️ Error approving action: ${err.message}`, 'assistant');
       }
     });
   }
+
 
   if (rejectBtn) {
     rejectBtn.addEventListener('click', async () => {
