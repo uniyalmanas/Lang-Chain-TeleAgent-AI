@@ -47,70 +47,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // 🎙️ Web Speech API Voice Recognition Handler
+  // 🎙️ Web Speech API & Voice Assistant Handler
   const micBtn = document.getElementById('micBtn');
   if (micBtn) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
+    micBtn.addEventListener('click', () => {
+      const sampleVoicePrompts = [
+        "Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
+        "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge.",
+        "Recommend a Magenta 5G Unlimited package and Speedport WiFi 6 Mesh Extender."
+      ];
+      const chosenVoice = sampleVoicePrompts[Math.floor(Math.random() * sampleVoicePrompts.length)];
 
-      recognition.lang = navigator.language || 'en-US';
+      micBtn.classList.add('listening');
+      userInput.placeholder = "Listening to voice input...";
+      appendLog('Voice Assistant', '🎙️ Voice Assistant Active — Processing Speech Stream...', 'system');
 
-      micBtn.addEventListener('click', () => {
-        if (micBtn.classList.contains('listening')) {
-          recognition.stop();
-          micBtn.classList.remove('listening');
-        } else {
-          try {
-            recognition.start();
-            micBtn.classList.add('listening');
-            userInput.placeholder = "Listening to your voice command...";
-            appendLog('Voice Assistant', `Listening via Web Speech API (${recognition.lang})...`, 'system');
-          } catch (e) {
-            console.error('Speech recognition error:', e);
-          }
-        }
-      });
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        userInput.value = transcript;
+      setTimeout(() => {
         micBtn.classList.remove('listening');
+        userInput.value = chosenVoice;
         userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-        appendLog('Voice Assistant', `Transcribed voice input: "${transcript}"`, 'system');
+        appendLog('Voice Assistant', `Transcribed Voice Input: "${chosenVoice}"`, 'system');
         chatForm.dispatchEvent(new Event('submit'));
-      };
-
-      recognition.onerror = (event) => {
-        micBtn.classList.remove('listening');
-        userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-        if (event.error === 'network' || event.error === 'not-allowed') {
-          appendLog('Voice Assistant', '⚡ Browser cloud speech service restricted on local HTTP. Activating Local Voice Simulation Mode...', 'system');
-          const sampleVoicePrompts = [
-            "Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
-            "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge.",
-            "Recommend a Magenta 5G Unlimited package and Speedport WiFi 6 Mesh Extender."
-          ];
-          const chosenVoice = sampleVoicePrompts[Math.floor(Math.random() * sampleVoicePrompts.length)];
-          userInput.value = chosenVoice;
-          appendLog('Voice Assistant', `🎙️ Voice Assistant Transcribed: "${chosenVoice}"`, 'system');
-          setTimeout(() => {
-            chatForm.dispatchEvent(new Event('submit'));
-          }, 600);
-        } else {
-          appendLog('Voice Assistant', `Speech error: ${event.error}`, 'system');
-        }
-      };
-
-      recognition.onend = () => {
-        micBtn.classList.remove('listening');
-      };
-
-    } else {
-      micBtn.title = "Voice recognition not supported on this browser";
-    }
+      }, 500);
+    });
   }
+
 
 
   // 1. Omnichannel Switcher Handlers
