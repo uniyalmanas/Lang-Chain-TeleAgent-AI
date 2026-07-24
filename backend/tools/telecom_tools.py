@@ -291,12 +291,89 @@ def optimize_smart_cart(customer_id: str = "CUST-101") -> str:
         "upi_payment_ready": True
     }, indent=2)
 
+import chromadb
+import hashlib
+import math
+from chromadb.api.types import EmbeddingFunction
+
+class FastVectorEF(EmbeddingFunction):
+    def __init__(self):
+        super().__init__()
+    def name(self):
+        return "dtdl_fast_vector_ef"
+    def __call__(self, input):
+        vecs = []
+        for text in input:
+            tokens = text.lower().split()
+            v = [0.0] * 64
+            for tok in tokens:
+                idx = int(hashlib.md5(tok.encode()).hexdigest(), 16) % 64
+                v[idx] += 1.0
+            norm = math.sqrt(sum(x * x for x in v)) or 1.0
+            vecs.append([x / norm for x in v])
+        return vecs
+
+# Initialize ChromaDB Vector Store Client for Real Vector RAG Queries
+_chroma_client = None
+_chroma_collection = None
+
+def _get_chroma_collection():
+    global _chroma_client, _chroma_collection
+    if _chroma_collection is None:
+        try:
+            _chroma_client = chromadb.Client()
+            _chroma_collection = _chroma_client.get_or_create_collection(
+                name="dtdl_telecom_rag",
+                embedding_function=FastVectorEF()
+            )
+            if _chroma_collection.count() == 0:
+                kb_docs = [
+                    "If speeds fall below 50% of subscribed rate, inspect 2.4GHz vs 5GHz channel interference. Switching from Channel 6 to Channel 11 resolves 80% of local congestion in high-density urban apartments across Delhi NCR, Mumbai, and Bengaluru.",
+                    "Per TRAI regulations, value-added services billed without explicit double-opt-in SMS confirmation must be refunded within 24 hours via instant UPI credit (GPay / PhonePe / Paytm) or bill balance adjustment.",
+                    "Minimum 25 Mbps broadband bandwidth required for 4K UHD HDR streaming. Connect Smart TV Box via direct Ethernet cable or 5GHz WiFi Mesh."
+                ]
+                kb_metadatas = [
+                    {"title": "WiFi Speed Optimization & 5GHz Channel Setup in Indian Apartments", "category": "Broadband Diagnostics"},
+                    {"title": "TRAI Consent Guidelines & Instant UPI Refund SLA", "category": "Billing & Compliance"},
+                    {"title": "Hotstar, SonyLIV & Magenta TV 4K UHD Streaming Requirements", "category": "OTT Entertainment"}
+                ]
+                _chroma_collection.add(
+                    documents=kb_docs,
+                    metadatas=kb_metadatas,
+                    ids=["doc-01", "doc-02", "doc-03"]
+                )
+        except Exception as e:
+            print(f"[WARNING] ChromaDB Vector Store fallback active: {e}")
+    return _chroma_collection
+
 @tool
 def retrieve_kb_articles(query: str) -> str:
     """
-    RAG Retriever: Searches Indian Telecom knowledge base articles, TRAI SLA terms, 
-    technical manuals, and Indian streaming FAQs.
+    RAG Retriever: Queries ChromaDB vector store collection using vector embeddings
+    over Indian Telecom knowledge base articles, TRAI SLA terms, and streaming FAQs.
     """
+    collection = _get_chroma_collection()
+    if collection:
+        try:
+            results = collection.query(query_texts=[query], n_results=2)
+            vector_docs = []
+            if results and "documents" in results and results["documents"]:
+                for i in range(len(results["documents"][0])):
+                    doc_text = results["documents"][0][i]
+                    metadata = results["metadatas"][0][i] if "metadatas" in results and results["metadatas"] else {}
+                    distance = results["distances"][0][i] if "distances" in results and results["distances"] else 0.0
+                    vector_docs.append({
+                        "title": metadata.get("title", "KB Article"),
+                        "category": metadata.get("category", "General"),
+                        "vector_similarity_score": f"{max(0.0, 1.0 - (distance / 2.0)):.3f}",
+                        "vector_engine": "ChromaDB Vector Store (dtdl_telecom_rag)",
+                        "content": doc_text
+                    })
+                return json.dumps({"rag_engine": "ChromaDB Vector Search Engine", "kb_results": vector_docs}, indent=2)
+        except Exception as e:
+            print(f"ChromaDB query error: {e}")
+
+    # Fallback keyword match if ChromaDB unavailable
     kb = [
         {
             "title": "WiFi Speed Optimization & 5GHz Channel Setup in Indian Apartments",
@@ -307,23 +384,16 @@ def retrieve_kb_articles(query: str) -> str:
             "title": "TRAI Consent Guidelines & Instant UPI Refund SLA",
             "category": "Billing & Compliance",
             "content": "Per TRAI regulations, value-added services billed without explicit double-opt-in SMS confirmation must be refunded within 24 hours via instant UPI credit (GPay / PhonePe / Paytm) or bill balance adjustment."
-        },
-        {
-            "title": "Hotstar, SonyLIV & Magenta TV 4K UHD Streaming Requirements",
-            "category": "OTT Entertainment",
-            "content": "Minimum 25 Mbps broadband bandwidth required for 4K UHD HDR streaming. Connect Smart TV Box via direct Ethernet cable or 5GHz WiFi Mesh."
         }
     ]
-    query_lower = query.lower()
-    results = [item for item in kb if any(word in item["content"].lower() or word in item["title"].lower() for word in query_lower.split())]
-    if not results:
-        results = kb
-    return json.dumps({"kb_results": results[:2]}, indent=2)
+    return json.dumps({"rag_engine": "ChromaDB Fallback Engine", "kb_results": kb}, indent=2)
+
 
 # Tool collections grouped by agent domain
 NETWORK_TOOLS = [check_router_diagnostics, reboot_router, retrieve_kb_articles]
 BILLING_TOOLS = [fetch_billing_statement, apply_bill_credit, retrieve_kb_articles]
 PLAN_TOOLS = [search_plan_catalog, get_explainable_recommendation, optimize_smart_cart, retrieve_kb_articles]
 ALL_TOOLS = NETWORK_TOOLS + BILLING_TOOLS + PLAN_TOOLS
+
 
 
