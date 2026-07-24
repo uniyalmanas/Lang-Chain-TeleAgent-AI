@@ -13,7 +13,10 @@ class AgentState(TypedDict):
     execution_logs: List[dict]
     # Customer ID context
     customer_id: str
+    # A/B Testing Variant context ('Variant A (Discount Focus)' or 'Variant B (Speed Focus)')
+    ab_variant: Optional[str]
     # Human-In-The-Loop approval state
     requires_human_approval: Optional[bool]
     pending_tool_call: Optional[dict]
+
 

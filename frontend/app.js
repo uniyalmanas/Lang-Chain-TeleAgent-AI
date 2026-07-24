@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-IN'; // Indian English / Hindi accent support
+      recognition.lang = 'de-DE'; // German / European Speech Recognition
 
       micBtn.addEventListener('click', () => {
         if (micBtn.classList.contains('listening')) {
@@ -75,12 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.start();
             micBtn.classList.add('listening');
             userInput.placeholder = "Listening to your voice command...";
-            appendLog('Voice Assistant', 'Listening via Web Speech API (en-IN)...', 'system');
+            appendLog('Voice Assistant', 'Listening via Web Speech API (de-DE)...', 'system');
           } catch (e) {
             console.error('Speech recognition error:', e);
           }
         }
       });
+
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -336,8 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: promptText, customer_id: customerId })
+        body: JSON.stringify({ message: promptText, customer_id: customerId, ab_variant: currentAbVariant })
       });
+
 
       const data = await response.json();
       removeMessage(loadingMessageId);
@@ -489,4 +491,23 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, "&gt;");
   }
 });
+
+// RLHF Preference Feedback Handler (Live POST /api/feedback Endpoint Integration)
+window.handleFeedback = async function(btn, type) {
+  const container = btn.parentElement;
+  const customerId = document.getElementById('customerSelect') ? document.getElementById('customerSelect').value : 'CUST-101';
+  container.innerHTML = `<span style="color:var(--dt-cyan); font-weight:600;">✓ Recorded ${type === 'like' ? '+1.0' : '-1.0'} reward signal via RLHF API</span>`;
+  try {
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer_id: customerId, rating: type })
+    });
+    const data = await res.json();
+    console.log('RLHF Feedback logged:', data);
+  } catch (e) {
+    console.error('Feedback error:', e);
+  }
+};
+
 
