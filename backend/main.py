@@ -116,6 +116,7 @@ def chat_endpoint(request: ChatRequest):
             "tool_outputs": tool_outputs,
             "requires_human_approval": final_state.get("requires_human_approval", False),
             "pending_tool_call": final_state.get("pending_tool_call")
+        }
     except Exception as e:
         logger.error(f"Agent workflow failure [thread_id={request.thread_id}]: {e}")
         return {
