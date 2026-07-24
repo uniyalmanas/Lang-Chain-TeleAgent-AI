@@ -8,12 +8,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mobile Hamburger Menu Toggle
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const headerRightControls = document.getElementById('headerRightControls');
-  if (mobileMenuBtn && headerRightControls) {
-    mobileMenuBtn.addEventListener('click', () => {
-      headerRightControls.classList.toggle('show-menu');
+  const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+  
+  function toggleMobileMenu() {
+    const isExpanded = document.body.classList.toggle('mobile-menu-open');
+    if (mobileMenuBtn) {
+      mobileMenuBtn.setAttribute('aria-expanded', isExpanded);
+    }
+  }
+  
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+  }
+  if (mobileMenuOverlay) {
+    mobileMenuOverlay.addEventListener('click', () => {
+      if (document.body.classList.contains('mobile-menu-open')) {
+        toggleMobileMenu();
+      }
     });
   }
+
+  // Close mobile menu on link click
+  document.querySelectorAll('.nav-link, .btn-primary-nav').forEach(link => {
+    link.addEventListener('click', () => {
+      if (document.body.classList.contains('mobile-menu-open')) toggleMobileMenu();
+    });
+  });
 
   // Smooth Scroll Active Nav Link Highlight
   const navLinks = document.querySelectorAll('.nav-link');
@@ -38,10 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Global Helper to trigger Ask AI & scroll smoothly to live playground
-  window.triggerAskAI = function(promptText) {
-    const playgroundEl = document.getElementById('playground');
-    if (playgroundEl) {
-      playgroundEl.scrollIntoView({ behavior: 'smooth' });
+  window.triggerAskAI = function(promptText, shouldScroll = true) {
+    if (shouldScroll) {
+      const playgroundEl = document.getElementById('playground');
+      if (playgroundEl) {
+        playgroundEl.scrollIntoView({ behavior: 'smooth' });
+      }
     }
 
     const userInput = document.getElementById('userInput');
@@ -149,13 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.prompt-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const promptText = chip.getAttribute('data-prompt');
-      window.triggerAskAI(promptText);
+      window.triggerAskAI(promptText, false);
     });
   });
 
   if (nbaActionBtn) {
     nbaActionBtn.addEventListener('click', () => {
-      window.triggerAskAI('Check my Speedport WiFi speed and router diagnostics in Bonn right now.');
+      window.triggerAskAI('Check my Speedport WiFi speed and router diagnostics in Bonn right now.', false);
     });
   }
 

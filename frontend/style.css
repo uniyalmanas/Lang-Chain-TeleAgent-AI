@@ -133,6 +133,7 @@ body {
 .nav-link {
   color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; font-weight: 600;
   padding: 0.45rem 0.85rem; border-radius: var(--radius-full); transition: var(--transition-fast);
+  white-space: nowrap;
 }
 
 .nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
@@ -140,6 +141,9 @@ body {
 
 .header-right { display: flex; align-items: center; gap: 0.75rem; }
 .mobile-menu-btn { display: none; }
+.icon-close { display: none; }
+body.mobile-menu-open .icon-menu { display: none; }
+body.mobile-menu-open .icon-close { display: block; }
 
 .customer-pill {
   display: flex; align-items: center; gap: 0.35rem;
@@ -158,6 +162,7 @@ body {
   border: 1px solid var(--dt-magenta); color: #fff;
   font-family: var(--font-display); font-weight: 600; font-size: 0.78rem;
   padding: 0.4rem 0.8rem; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: var(--transition-fast);
+  white-space: nowrap; flex-shrink: 0;
 }
 .cart-btn:hover { box-shadow: var(--shadow-magenta); transform: translateY(-1px); }
 
@@ -167,6 +172,7 @@ body {
   background: var(--dt-magenta); color: #fff; text-decoration: none;
   font-family: var(--font-display); font-weight: 700; font-size: 0.8rem;
   padding: 0.45rem 1rem; border-radius: var(--radius-full); box-shadow: var(--shadow-magenta); transition: var(--transition-fast);
+  white-space: nowrap; flex-shrink: 0;
 }
 .btn-primary-nav:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
@@ -507,6 +513,13 @@ body.mode-oneapp .mobile-frame-header, body.mode-oneapp .mobile-home-bar { displ
    MOBILE & TABLET RESPONSIVE MEDIA QUERIES
    ========================================================================== */
 
+@media (max-width: 1360px) {
+  .header-inner { gap: 0.75rem; padding: 0.75rem 1rem; }
+  .nav-links { gap: 0.25rem; }
+  .nav-link { padding: 0.45rem 0.65rem; font-size: 0.8rem; }
+  .customer-dropdown { max-width: 160px; }
+}
+
 @media (max-width: 1200px) {
   .hero-container { grid-template-columns: 1fr; gap: 2.5rem; }
   .playground-grid { grid-template-columns: 1fr; }
@@ -539,7 +552,17 @@ body.mode-oneapp .mobile-frame-header, body.mode-oneapp .mobile-home-bar { displ
 }
 
 @media (max-width: 600px) {
-  .header-inner { padding: 0.5rem 0.75rem; gap: 0.5rem; }
+  .mobile-menu-overlay { 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.6); 
+    z-index: 90; 
+    backdrop-filter: blur(4px); 
+  }
+  body.mobile-menu-open .mobile-menu-overlay { display: block; }
+
+  .header-inner { padding: 0.75rem 1rem; gap: 0; }
   
   .mobile-menu-btn { 
     display: block; 
@@ -551,25 +574,45 @@ body.mode-oneapp .mobile-frame-header, body.mode-oneapp .mobile-home-bar { displ
     cursor: pointer; 
     padding: 0.25rem; 
     margin-left: auto; 
+    z-index: 101;
   }
+
+  .nav-links {
+    display: none;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    width: 100%;
+    white-space: normal;
+    padding: 1.5rem 0 0.5rem 0;
+    gap: 0.5rem;
+    overflow-x: visible;
+  }
+
   .header-right { 
     display: none; 
-    position: absolute; 
-    top: 60px; 
-    right: 15px; 
-    background: rgba(15, 23, 42, 0.98); 
-    border: 1px solid var(--border-subtle); 
-    border-radius: var(--radius-lg); 
-    padding: 1.25rem; 
+    grid-column: 1 / -1;
+    width: 100%;
     flex-direction: column; 
     align-items: stretch;
     gap: 0.8rem;
-    z-index: 200; 
-    box-shadow: var(--shadow-lg); 
-    width: 260px;
-    box-sizing: border-box;
+    position: static; 
+    background: transparent; 
+    border: none;
+    border-top: 1px solid var(--border-subtle); 
+    border-radius: 0; 
+    padding: 1rem 0 0.5rem 0;
+    margin-top: 1rem;
+    box-shadow: none; 
   }
-  .header-right.show-menu { display: flex; }
+
+  body.mobile-menu-open .nav-links,
+  body.mobile-menu-open .header-right { 
+    display: flex; 
+  }
+
+  body.mobile-menu-open .site-header {
+    background: rgba(15, 23, 42, 0.98);
+  }
   
   .company-sub { display: none; }
   .product-title { font-size: 0.95rem; }
