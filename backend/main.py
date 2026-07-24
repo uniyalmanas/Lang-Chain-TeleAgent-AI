@@ -10,10 +10,18 @@ if user_site not in sys.path:
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Literal, Optional
+
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
 from backend.agents.multi_agent_system import create_multi_agent_graph
+from backend.services.checkout_service import (
+    get_checkout_preview,
+    complete_checkout,
+    log_abandonment_nudge,
+    get_checkout_events,
+)
 
 app = FastAPI(title="DTDL TeleAgent - Multi-Agent AI Platform", version="1.0.0")
 
@@ -38,16 +46,22 @@ class ChatRequest(BaseModel):
     message: str
     customer_id: str = "CUST-101"
     thread_id: str = "session_default"
-    ab_variant: str = "Variant A (Discount Focus)"
 
 class ApproveRequest(BaseModel):
     thread_id: str = "session_default"
     approved: bool = True
     customer_id: str = "CUST-101"
 
-class FeedbackRequest(BaseModel):
+class CheckoutCompleteRequest(BaseModel):
     customer_id: str = "CUST-101"
-    rating: str = "like"
+    payment_method: Literal["upi", "card", "netbanking"] = "upi"
+    upi_id: Optional[str] = None
+    channel: str = "OneShop Web"
+
+class AbandonmentNudgeRequest(BaseModel):
+    customer_id: str = "CUST-101"
+    channel: str = "OneShop Web"
+    seconds_open: int = 30
 
 @app.get("/api/health")
 def health_check():
@@ -56,17 +70,6 @@ def health_check():
         "service": "Deutsche Telekom Digital Labs TeleAgent AI Engine",
         "version": "1.0.0"
     }
-
-@app.post("/api/feedback")
-def submit_feedback(request: FeedbackRequest):
-    print(f"[RLHF FEEDBACK] customer={request.customer_id} rating={request.rating}")
-    return {
-        "status": "logged",
-        "customer_id": request.customer_id,
-        "rating": request.rating,
-        "reward_signal": 1.0 if request.rating == "like" else -1.0
-    }
-
 
 @app.post("/api/chat")
 def chat_endpoint(request: ChatRequest):
@@ -77,34 +80,44 @@ def chat_endpoint(request: ChatRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Configuration error: {str(e)}. Check your GROQ_API_KEY or GEMINI_API_KEY in .env.")
 
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    prior_len = 0
+    try:
+        snapshot = agent_graph.get_state(config)
+        if snapshot and snapshot.values:
+            prior_len = len(snapshot.values.get("messages", []))
+    except Exception:
+        prior_len = 0
+
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
         "next": "supervisor",
         "active_agent": "supervisor",
         "execution_logs": [],
         "customer_id": request.customer_id,
-        "ab_variant": request.ab_variant,
         "requires_human_approval": False,
-        "pending_tool_call": None
+        "pending_tool_call": None,
     }
-
-
-    config = {"configurable": {"thread_id": request.thread_id}}
 
     try:
         final_state = agent_graph.invoke(initial_state, config=config)
 
-        # Extract final AI response
-        ai_responses = [msg.content for msg in final_state["messages"] if isinstance(msg, AIMessage) and msg.content]
-        final_text = ai_responses[-1] if ai_responses else "Request processed successfully."
+        all_messages = final_state["messages"]
+        new_messages = all_messages[prior_len:]
 
-        # Extract tool calls & outputs
+        ai_responses = [
+            msg.content for msg in new_messages
+            if isinstance(msg, AIMessage) and msg.content
+        ]
+        final_text = ai_responses[-1] if ai_responses else "I couldn't generate a response. Please try again."
+
         tool_outputs = []
-        for msg in final_state["messages"]:
+        for msg in new_messages:
             if isinstance(msg, ToolMessage):
                 tool_outputs.append({
                     "tool": getattr(msg, "name", "tool"),
-                    "output": msg.content
+                    "output": msg.content,
                 })
 
         return {
@@ -113,7 +126,8 @@ def chat_endpoint(request: ChatRequest):
             "execution_logs": final_state.get("execution_logs", []),
             "tool_outputs": tool_outputs,
             "requires_human_approval": final_state.get("requires_human_approval", False),
-            "pending_tool_call": final_state.get("pending_tool_call")
+            "pending_tool_call": final_state.get("pending_tool_call"),
+            "thread_id": request.thread_id,
         }
 
     except Exception as e:
@@ -133,24 +147,36 @@ def get_xai_explanation(product_id: str, customer_id: str = "CUST-101"):
     import json
     return json.loads(result_json)
 
-@app.get("/api/impact-summary")
-def get_business_impact_summary():
-    return {
-        "engine": "DTDL Omnichannel Consumer Intelligence Engine",
-        "market": "Deutsche Telekom AG (Germany / Europe)",
-        "projected_business_outcomes": {
-            "cart_abandonment_reduction": "-24.5%",
-            "conversion_lift_nba": "+18.2%",
-            "first_contact_resolution_fcr": "+38.0%",
-            "mean_time_to_resolution_mttr": "Reduced from 48h to 45 seconds",
-            "gdpr_compliance_status": "100% Verified (BNetzA SLA & SEPA Audit Logging)"
-        },
-        "technical_hardening": {
-            "routing": "Deterministic Keyword-First + LangGraph Supervisor Fallback",
-            "persistence": "LangGraph MemorySaver Checkpointer (thread_id stateful recovery)",
-            "vector_rag": "ChromaDB Local Vector Collection (dtdl_telecom_rag)"
-        }
-    }
+@app.get("/api/checkout/preview/{customer_id}")
+def checkout_preview(customer_id: str):
+    try:
+        return get_checkout_preview(customer_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/api/checkout/complete")
+def checkout_complete(request: CheckoutCompleteRequest):
+    try:
+        return complete_checkout(
+            customer_id=request.customer_id,
+            payment_method=request.payment_method,
+            upi_id=request.upi_id,
+            channel=request.channel,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/checkout/abandonment-nudge")
+def checkout_abandonment_nudge(request: AbandonmentNudgeRequest):
+    return log_abandonment_nudge(
+        customer_id=request.customer_id,
+        channel=request.channel,
+        seconds_open=request.seconds_open,
+    )
+
+@app.get("/api/checkout/events")
+def checkout_events(customer_id: Optional[str] = None):
+    return get_checkout_events(customer_id)
 
 @app.post("/api/approve-action")
 def approve_action_endpoint(request: ApproveRequest):
@@ -162,14 +188,13 @@ def approve_action_endpoint(request: ApproveRequest):
 
     # Execute approved action directly
     from backend.tools.telecom_tools import apply_bill_credit
-    result = apply_bill_credit.invoke({"customer_id": request.customer_id, "amount": 29.75, "reason": "Approved by Human Supervisor (BNetzA SLA)"})
+    result = apply_bill_credit.invoke({"customer_id": request.customer_id, "amount": 500.0, "reason": "Approved by Human Supervisor"})
 
     return {
         "status": "APPROVED",
-        "message": "Human approval granted. SEPA refund credit of €29.75 applied successfully!",
+        "message": "Human approval granted. Refund credit of ₹500 applied successfully!",
         "result": result
     }
-
 
 
 # Mount static frontend files if directory exists

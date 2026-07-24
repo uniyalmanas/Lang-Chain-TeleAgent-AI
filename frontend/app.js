@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const API_URL = '/api/chat';
   let currentChannel = 'OneShop Web';
   let currentAbVariant = 'Variant A (Discount Focus)';
+  let chatThreadId = `session_${Date.now()}`;
 
   // A/B Testing Recommendation Engine Handlers
   const btnVariantA = document.getElementById('btnVariantA');
@@ -44,34 +45,66 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  window.handleFeedback = function(btn, type) {
+    const container = btn.parentElement;
+    if (type === 'like') {
+      container.innerHTML = '👍 <span style="color:#4ADE80;">Thank you! Positive preference logged for continuous RLHF learning.</span>';
+      appendLog('Continuous Learning', 'Positive feedback recorded (+1.0 reward signal)', 'system');
+    } else {
+      container.innerHTML = '👎 <span style="color:#FF4D4D;">Feedback logged! Model routing weights updated for next session.</span>';
+      appendLog('Continuous Learning', 'Negative feedback recorded (-1.0 penalty signal)', 'system');
+    }
+  };
 
 
-
-  // 🎙️ Web Speech API & Voice Assistant Handler
+  // 🎙️ Web Speech API Voice Recognition Handler
   const micBtn = document.getElementById('micBtn');
   if (micBtn) {
-    micBtn.addEventListener('click', () => {
-      const sampleVoicePrompts = [
-        "Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
-        "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge.",
-        "Recommend a Magenta 5G Unlimited package and Speedport WiFi 6 Mesh Extender."
-      ];
-      const chosenVoice = sampleVoicePrompts[Math.floor(Math.random() * sampleVoicePrompts.length)];
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-IN'; // Indian English / Hindi accent support
 
-      micBtn.classList.add('listening');
-      userInput.placeholder = "Listening to voice input...";
-      appendLog('Voice Assistant', '🎙️ Voice Assistant Active — Processing Speech Stream...', 'system');
+      micBtn.addEventListener('click', () => {
+        if (micBtn.classList.contains('listening')) {
+          recognition.stop();
+          micBtn.classList.remove('listening');
+        } else {
+          try {
+            recognition.start();
+            micBtn.classList.add('listening');
+            userInput.placeholder = "Listening to your voice command...";
+            appendLog('Voice Assistant', 'Listening via Web Speech API (en-IN)...', 'system');
+          } catch (e) {
+            console.error('Speech recognition error:', e);
+          }
+        }
+      });
 
-      setTimeout(() => {
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
         micBtn.classList.remove('listening');
-        userInput.value = chosenVoice;
         userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-        appendLog('Voice Assistant', `Transcribed Voice Input: "${chosenVoice}"`, 'system');
+        appendLog('Voice Assistant', `Transcribed voice input: "${transcript}"`, 'system');
         chatForm.dispatchEvent(new Event('submit'));
-      }, 500);
-    });
-  }
+      };
 
+      recognition.onerror = (event) => {
+        micBtn.classList.remove('listening');
+        userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
+        appendLog('Voice Assistant', `Speech error: ${event.error}`, 'system');
+      };
+
+      recognition.onend = () => {
+        micBtn.classList.remove('listening');
+      };
+    } else {
+      micBtn.title = "Voice recognition not supported on this browser";
+    }
+  }
 
 
   // 1. Omnichannel Switcher Handlers
@@ -108,10 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
     openCartBtn.addEventListener('click', () => {
       fetchCart();
       cartDrawer.classList.add('open');
+      startAbandonmentTimer();
     });
 
     closeCartBtn.addEventListener('click', () => {
       cartDrawer.classList.remove('open');
+      clearAbandonmentTimer();
     });
   }
 
@@ -130,9 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const cartNudgeBox = document.getElementById('cartNudgeBox');
 
       if (customerNameEl) {
-        if (customerId === 'CUST-101') customerNameEl.textContent = 'Alex Mercer (Bonn, Germany)';
-        else if (customerId === 'CUST-102') customerNameEl.textContent = 'Sarah Connor (Berlin, Germany)';
-        else customerNameEl.textContent = 'Lukas Weber (Frankfurt, Germany)';
+        if (customerId === 'CUST-101') customerNameEl.textContent = 'Rahul Sharma (Gurugram, NCR)';
+        else if (customerId === 'CUST-102') customerNameEl.textContent = 'Priya Patel (Bengaluru, KA)';
+        else customerNameEl.textContent = 'Vikram Malhotra (Mumbai, MH)';
       }
 
       let itemsHTML = '';
@@ -144,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="cart-item-name">${item.name}</div>
                 <div style="font-size:0.7rem; color:var(--text-muted);">${item.type}</div>
               </div>
-              <div class="cart-item-price">€${item.price.toFixed(2)}</div>
+              <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
             </div>
           `;
         });
@@ -155,18 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (cartItemsList) cartItemsList.innerHTML = itemsHTML;
-      if (cartSubtotal) cartSubtotal.textContent = data.subtotal_base || data.subtotal;
-      if (cartDiscount) cartDiscount.textContent = `-${data.bundle_discount}`;
-      if (cartTotal) cartTotal.textContent = data.total;
+      if (cartSubtotal) cartSubtotal.textContent = data.subtotal_base || data.subtotal || '₹0.00';
+      if (cartDiscount) cartDiscount.textContent = `-${(data.bundle_discount || '₹0.00').replace('₹', '')}`;
+      if (cartTotal) cartTotal.textContent = data.total || '₹0.00';
 
       if (cartNudgeBox) {
         if (data.applied_nudge) {
           cartNudgeBox.innerHTML = `<span class="nudge-icon">🎉</span> <span class="nudge-text">${data.applied_nudge}</span>`;
         } else {
-          cartNudgeBox.innerHTML = `<span class="nudge-icon">🎁</span> <span class="nudge-text">Add <strong>Speedport WiFi 6 Mesh Disc (€4.95/mo)</strong> to qualify for MagentaEins discount!</span>`;
+          cartNudgeBox.innerHTML = `<span class="nudge-icon">🎁</span> <span class="nudge-text">Add <strong>Smart WiFi Mesh Extender (₹149/mo)</strong> to qualify for bundle discount!</span>`;
         }
       }
-
     } catch (err) {
       console.error('Failed to fetch cart:', err);
     }
@@ -206,8 +240,237 @@ document.addEventListener('DOMContentLoaded', () => {
   // Next Best Action (NBA) Button Handler
   if (nbaActionBtn) {
     nbaActionBtn.addEventListener('click', () => {
-      userInput.value = 'Add Speedport WiFi 6 Mesh Disc to my cart for €4.95/mo and optimize router WLAN channel.';
+      userInput.value = 'Add Smart WiFi 6 Mesh Extender to my cart for ₹149/mo and optimize router channel.';
       chatForm.dispatchEvent(new Event('submit'));
+    });
+  }
+
+  // ========== CHECKOUT FUNNEL ==========
+  const checkoutModal = document.getElementById('checkoutModal');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const closeCheckoutBtn = document.getElementById('closeCheckoutBtn');
+  const checkoutNextBtn = document.getElementById('checkoutNextBtn');
+  const checkoutBackBtn = document.getElementById('checkoutBackBtn');
+  const checkoutStepContent = document.getElementById('checkoutStepContent');
+
+  let checkoutStep = 1;
+  let checkoutPreview = null;
+  let selectedPayment = 'upi';
+  let abandonmentTimer = null;
+  let checkoutStarted = false;
+
+  function clearAbandonmentTimer() {
+    if (abandonmentTimer) {
+      clearTimeout(abandonmentTimer);
+      abandonmentTimer = null;
+    }
+  }
+
+  function startAbandonmentTimer() {
+    clearAbandonmentTimer();
+    checkoutStarted = false;
+
+    abandonmentTimer = setTimeout(async () => {
+      if (checkoutStarted) return;
+
+      const customerId = customerSelect.value;
+      try {
+        const res = await fetch('/api/checkout/abandonment-nudge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            channel: currentChannel,
+            seconds_open: 30
+          })
+        });
+        const data = await res.json();
+
+        if (nbaBanner && data.nudge) {
+          nbaBanner.classList.add('abandonment-nudge');
+          document.getElementById('nbaMessage').textContent =
+            `${data.nudge.message} ${data.nudge.discount_hint || ''}`;
+          nbaBanner.style.display = 'flex';
+        }
+        appendLog('Cart Abandonment NBA', data.nudge?.message || 'Nudge triggered', 'system');
+      } catch (err) {
+        console.error('Abandonment nudge failed:', err);
+      }
+    }, 30000);
+  }
+
+  function updateCheckoutStepUI() {
+    document.querySelectorAll('.checkout-step').forEach(el => {
+      const step = parseInt(el.dataset.step, 10);
+      el.classList.remove('active', 'done');
+      if (step < checkoutStep) el.classList.add('done');
+      if (step === checkoutStep) el.classList.add('active');
+    });
+    checkoutBackBtn.style.display = checkoutStep > 1 && checkoutStep < 4 ? 'inline-block' : 'none';
+    checkoutNextBtn.textContent =
+      checkoutStep === 3 ? 'Pay Now' :
+      checkoutStep === 4 ? 'Done' : 'Continue';
+  }
+
+  async function loadCheckoutPreview() {
+    const customerId = customerSelect.value;
+    const res = await fetch(`/api/checkout/preview/${customerId}`);
+    checkoutPreview = await res.json();
+    if (!res.ok) throw new Error(checkoutPreview.detail || 'Preview failed');
+    return checkoutPreview;
+  }
+
+  function renderCheckoutStep() {
+    updateCheckoutStepUI();
+    const s = checkoutPreview?.cart_summary || {};
+
+    if (checkoutStep === 1) {
+      checkoutStepContent.innerHTML = `
+        <h4>Cart Review</h4>
+        <p style="font-size:0.85rem;color:var(--text-muted);">Review items before checkout.</p>
+        <div class="cart-items-list" style="margin-top:0.75rem;">
+          ${(s.cart_items || []).map(i => `
+            <div class="cart-item">
+              <div><div class="cart-item-name">${i.name}</div><div style="font-size:0.7rem;color:var(--text-muted);">${i.type}</div></div>
+              <div class="cart-item-price">₹${i.price.toFixed(2)}</div>
+            </div>`).join('') || '<p>Cart is empty.</p>'}
+        </div>
+        <div class="cart-summary" style="margin-top:1rem;">
+          <div class="summary-row"><span>Subtotal</span><span>${s.subtotal_base || '-'}</span></div>
+          <div class="summary-row discount"><span>Discount</span><span>-${(s.bundle_discount || '₹0.00').replace('₹','')}</span></div>
+          <div class="summary-row total"><span>Total</span><span>${s.total || '-'}</span></div>
+        </div>`;
+    }
+
+    if (checkoutStep === 2) {
+      const suggestions = checkoutPreview?.bundle_suggestions || [];
+      checkoutStepContent.innerHTML = `
+        <h4>Bundle Optimization</h4>
+        <p style="font-size:0.85rem;color:var(--text-muted);">AI-optimized pricing for your cart.</p>
+        ${s.applied_nudge ? `<div class="nudge-box"><span class="nudge-icon">🎉</span><span>${s.applied_nudge}</span></div>` : ''}
+        <ul style="margin-top:0.75rem;font-size:0.85rem;padding-left:1.2rem;">
+          ${suggestions.map(x => `<li>${x.message}</li>`).join('') || '<li>No extra optimizations needed.</li>'}
+        </ul>`;
+    }
+
+    if (checkoutStep === 3) {
+      const upi = checkoutPreview?.subscriber?.upi_id || 'rahul.sharma@okicici';
+      checkoutStepContent.innerHTML = `
+        <h4>Payment Method</h4>
+        <div class="checkout-payment-options">
+          <label class="payment-option selected" data-method="upi">
+            <input type="radio" name="pay" value="upi" checked> 📱 UPI (${upi})
+          </label>
+          <label class="payment-option" data-method="card">
+            <input type="radio" name="pay" value="card"> 💳 Credit / Debit Card
+          </label>
+          <label class="payment-option" data-method="netbanking">
+            <input type="radio" name="pay" value="netbanking"> 🏦 Net Banking
+          </label>
+        </div>`;
+
+      checkoutStepContent.querySelectorAll('.payment-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          checkoutStepContent.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+          selectedPayment = opt.dataset.method;
+        });
+      });
+    }
+
+    if (checkoutStep === 4 && checkoutPreview?.confirmation) {
+      const c = checkoutPreview.confirmation;
+      checkoutStepContent.innerHTML = `
+        <div class="checkout-success">
+          <div style="font-size:2.5rem;">✅</div>
+          <h4>Order Confirmed!</h4>
+          <div class="order-id">${c.order_id}</div>
+          <p style="font-size:0.85rem;color:var(--text-muted);">${c.message}</p>
+          <p style="font-size:0.8rem;margin-top:0.5rem;">Txn: ${c.payment?.transaction_id}</p>
+        </div>`;
+    }
+  }
+
+  async function openCheckoutWizard() {
+    checkoutStarted = true;
+    clearAbandonmentTimer();
+    checkoutStep = 1;
+    selectedPayment = 'upi';
+
+    try {
+      await loadCheckoutPreview();
+      if (checkoutPreview.status === 'empty_cart') {
+        appendMessage('⚠️ Your cart is empty. Add items before checkout.', 'assistant');
+        return;
+      }
+      checkoutModal.style.display = 'flex';
+      renderCheckoutStep();
+      appendLog('Checkout Funnel', 'Step 1: Cart review started', 'system');
+    } catch (err) {
+      appendMessage(`⚠️ Checkout error: ${err.message}`, 'assistant');
+    }
+  }
+
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', openCheckoutWizard);
+  }
+
+  if (closeCheckoutBtn) {
+    closeCheckoutBtn.addEventListener('click', () => {
+      checkoutModal.style.display = 'none';
+    });
+  }
+
+  if (checkoutBackBtn) {
+    checkoutBackBtn.addEventListener('click', () => {
+      if (checkoutStep > 1) {
+        checkoutStep--;
+        renderCheckoutStep();
+      }
+    });
+  }
+
+  if (checkoutNextBtn) {
+    checkoutNextBtn.addEventListener('click', async () => {
+      if (checkoutStep === 3) {
+        checkoutNextBtn.disabled = true;
+        try {
+          const res = await fetch('/api/checkout/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customer_id: customerSelect.value,
+              payment_method: selectedPayment,
+              channel: currentChannel
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Payment failed');
+
+          checkoutPreview.confirmation = data;
+          checkoutStep = 4;
+          renderCheckoutStep();
+
+          appendLog('Conversion Event', `Order ${data.order_id} — ${data.payment?.amount_paid}`, 'system');
+          fetchCart();
+        } catch (err) {
+          appendMessage(`⚠️ Payment failed: ${err.message}`, 'assistant');
+        } finally {
+          checkoutNextBtn.disabled = false;
+        }
+        return;
+      }
+
+      if (checkoutStep === 4) {
+        checkoutModal.style.display = 'none';
+        cartDrawer.classList.remove('open');
+        appendMessage(`🎉 **Checkout complete!** Your order is synced across ${currentChannel}.`, 'assistant');
+        return;
+      }
+
+      checkoutStep++;
+      renderCheckoutStep();
+      appendLog('Checkout Funnel', `Advanced to step ${checkoutStep}`, 'system');
     });
   }
 
@@ -226,6 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Clear Chat Handler
   clearChatBtn.addEventListener('click', () => {
+    chatThreadId = `session_${Date.now()}`;
     messagesContainer.innerHTML = `
       <div class="message assistant-message">
         <div class="avatar">DT</div>
@@ -238,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logContainer.innerHTML = `
       <div class="log-entry system-log">
         <span class="timestamp">System</span>
-        <span class="text">Omnichannel Multi-Agent graph reset. BNetzA & GDPR compliance active.</span>
+        <span class="text">Omnichannel Multi-Agent graph reset.</span>
       </div>
     `;
   });
@@ -252,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     approveBtn.addEventListener('click', async () => {
       hitlBanner.style.display = 'none';
       const customerId = customerSelect.value;
-      appendLog('Human Supervisor', 'Approved €29.75 refund credit action (BNetzA SLA)', 'system');
+      appendLog('Human Supervisor', 'Approved ₹500 refund credit action', 'system');
       
       try {
         const res = await fetch('/api/approve-action', {
@@ -262,14 +526,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         appendMessage(`✅ **Action Executed**: ${data.message}`, 'assistant');
-        appendLog('Billing Agent', 'Transaction TXN-SEPA-DE-9982341 applied successfully', 'tool');
+        appendLog('Billing Agent', 'Transaction TXN-IND-9982341 applied successfully', 'tool');
         fetchCart(); // Refresh cart state
       } catch (err) {
         appendMessage(`⚠️ Error approving action: ${err.message}`, 'assistant');
       }
     });
   }
-
 
   if (rejectBtn) {
     rejectBtn.addEventListener('click', async () => {
@@ -304,9 +567,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: promptText, customer_id: customerId, ab_variant: currentAbVariant })
+        body: JSON.stringify({
+          message: promptText,
+          customer_id: customerId,
+          thread_id: chatThreadId,
+        })
       });
-
 
       const data = await response.json();
       removeMessage(loadingMessageId);
@@ -328,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Render Assistant Response
-      appendMessage(data.response, 'assistant', data.tool_outputs);
+      appendMessage(data.response, 'assistant');
 
       // Trigger HITL Banner if human approval is required
       if (data.requires_human_approval && hitlBanner) {
@@ -344,23 +610,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // UI Helper Functions
-  function appendMessage(text, sender, toolOutputs = []) {
+  function appendMessage(text, sender) {
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', `${sender}-message`);
 
     const avatarText = sender === 'user' ? 'YOU' : 'DT';
-    
-    let toolCardsHTML = '';
-    if (toolOutputs && toolOutputs.length > 0) {
-      toolOutputs.forEach(tool => {
-        toolCardsHTML += `
-          <div class="tool-output-card">
-            <strong>⚙️ Executed Tool [${tool.tool}]:</strong>
-            <pre>${escapeHtml(tool.output)}</pre>
-          </div>
-        `;
-      });
-    }
 
     let feedbackHTML = '';
     if (sender === 'assistant') {
@@ -377,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="avatar">${avatarText}</div>
       <div class="message-content">
         <p>${formatMarkdown(text)}</p>
-        ${toolCardsHTML}
         ${feedbackHTML}
       </div>
     `;
@@ -458,23 +711,4 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, "&gt;");
   }
 });
-
-// RLHF Preference Feedback Handler (Live POST /api/feedback Endpoint Integration)
-window.handleFeedback = async function(btn, type) {
-  const container = btn.parentElement;
-  const customerId = document.getElementById('customerSelect') ? document.getElementById('customerSelect').value : 'CUST-101';
-  container.innerHTML = `<span style="color:var(--dt-cyan); font-weight:600;">✓ Recorded ${type === 'like' ? '+1.0' : '-1.0'} reward signal via RLHF API</span>`;
-  try {
-    const res = await fetch('/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customer_id: customerId, rating: type })
-    });
-    const data = await res.json();
-    console.log('RLHF Feedback logged:', data);
-  } catch (e) {
-    console.error('Feedback error:', e);
-  }
-};
-
 

@@ -40,9 +40,9 @@
         <div class="customer-selector">
           <label for="customerSelect">Subscriber:</label>
           <select id="customerSelect">
-            <option value="CUST-101">Alex Mercer (CUST-101) - Bonn (MagentaZuhause 500M + Dispute)</option>
-            <option value="CUST-102">Sarah Connor (CUST-102) - Berlin (MagentaMobil Unlimited 5G)</option>
-            <option value="CUST-103">Lukas Weber (CUST-103) - Frankfurt (MagentaZuhause 1 Gbps Fiber)</option>
+            <option value="CUST-101">Rahul Sharma (CUST-101) - Gurugram (Fiber + Billing Dispute)</option>
+            <option value="CUST-102">Priya Patel (CUST-102) - Bengaluru (Truly 5G Unlimited)</option>
+            <option value="CUST-103">Vikram Malhotra (CUST-103) - Mumbai (1 Gbps Enterprise Fiber)</option>
           </select>
         </div>
         <button class="cart-btn" id="openCartBtn">
@@ -50,9 +50,10 @@
         </button>
         <div class="system-status">
           <span class="status-dot online"></span>
-          <span>BNetzA & GDPR Verified</span>
+          <span>Synced across channels</span>
         </div>
       </div>
+
     </header>
 
     <!-- Main Grid Layout -->
@@ -73,11 +74,20 @@
             
             <div class="node-connector"></div>
 
+            <div class="agent-node" id="node-chat_agent">
+              <div class="node-icon">💬</div>
+              <div class="node-info">
+                <h4>Conversational AI</h4>
+                <p>LLM Chat & Subscriber Context</p>
+              </div>
+              <div class="node-status">IDLE</div>
+            </div>
+
             <div class="agent-node" id="node-network_agent">
               <div class="node-icon">📡</div>
               <div class="node-info">
                 <h4>Network & Diagnostics</h4>
-                <p>Speedport WLAN & Mesh</p>
+                <p>Broadband, WiFi & Mesh</p>
               </div>
               <div class="node-status">IDLE</div>
             </div>
@@ -86,7 +96,7 @@
               <div class="node-icon">💳</div>
               <div class="node-info">
                 <h4>Billing & Refunds</h4>
-                <p>Invoices & SEPA Refunds</p>
+                <p>Invoices & HITL Refunds</p>
               </div>
               <div class="node-status">IDLE</div>
             </div>
@@ -95,32 +105,9 @@
               <div class="node-icon">🚀</div>
               <div class="node-info">
                 <h4>Commerce & Plan Advisor</h4>
-                <p>Magenta Catalog RAG & XAI</p>
+                <p>Catalog RAG & Bundles</p>
               </div>
               <div class="node-status">IDLE</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Business Impact & Projected ROI Panel -->
-        <div class="panel-card impact-card">
-          <h2><span class="icon">📊</span> Business Outcomes & Projected ROI</h2>
-          <div class="impact-grid">
-            <div class="impact-stat">
-              <span class="stat-value" id="statCart">-24.5%</span>
-              <span class="stat-label">Cart Abandonment</span>
-            </div>
-            <div class="impact-stat">
-              <span class="stat-value" id="statConv">+18.2%</span>
-              <span class="stat-label">Conversion Lift</span>
-            </div>
-            <div class="impact-stat">
-              <span class="stat-value" id="statFcr">+38.0%</span>
-              <span class="stat-label">FCR Auto Resolution</span>
-            </div>
-            <div class="impact-stat">
-              <span class="stat-value" id="statMttr">45s</span>
-              <span class="stat-label">Avg. MTTR (vs 48h)</span>
             </div>
           </div>
         </div>
@@ -130,7 +117,7 @@
           <div class="log-container" id="logContainer">
             <div class="log-entry system-log">
               <span class="timestamp">System</span>
-              <span class="text">Omnichannel Multi-Agent graph online. BNetzA & GDPR compliance active.</span>
+              <span class="text">Omnichannel Multi-Agent graph online. Awaiting prompt...</span>
             </div>
           </div>
         </div>
@@ -145,80 +132,91 @@
           <span class="sync-tag">⚡ State Synced (Session ID: session_default)</span>
         </div>
 
-        <div class="chat-header">
-          <div class="chat-title">
-            <h3>DT Customer Operations Engine</h3>
-            <p>Powered by LangGraph, Speedport Tools, and Groq Llama-3.3 / Gemini 1.5</p>
+        <div class="engine-top">
+          <div class="chat-header">
+            <div class="chat-title">
+              <h3>DT Customer Operations Engine</h3>
+              <p>Powered by LangGraph, Tool Calling, and Groq Llama-3.3 / Gemini 1.5</p>
+            </div>
+            <button class="clear-btn" id="clearChatBtn">Clear History</button>
           </div>
-          <button class="clear-btn" id="clearChatBtn">Clear History</button>
-        </div>
 
-        <!-- Next Best Action Proactive Nudge Banner -->
-        <div class="nba-banner" id="nbaBanner" style="display: flex;">
-          <div class="nba-icon">💡</div>
-          <div class="nba-text">
-            <strong>Next Best Action (Proactive Nudge):</strong>
-            <span id="nbaMessage">Bonn subscriber detected with weak WLAN signal in Bedroom (-74 dBm). Recommend Speedport WiFi 6 Mesh Disc @ €4.95/mo.</span>
+          <!-- Next Best Action Proactive Nudge Banner -->
+          <div class="nba-banner" id="nbaBanner" style="display: flex;">
+            <div class="nba-icon">💡</div>
+            <div class="nba-text">
+              <strong>Next Best Action (Proactive Nudge):</strong>
+              <span id="nbaMessage">Gurugram subscriber detected with weak WiFi signal in Bedroom (-74 dBm). Recommend Smart WiFi 6 Mesh Extender @ ₹149/mo.</span>
+            </div>
+            <button class="nba-btn" id="nbaActionBtn">Apply Recommendation</button>
           </div>
-          <button class="nba-btn" id="nbaActionBtn">Apply Recommendation</button>
-        </div>
 
-        <!-- Sample Quick Prompts -->
-        <div class="quick-prompts">
-          <button class="prompt-chip" data-prompt="Check my Speedport WiFi speed and router diagnostics in Bonn right now.">
-            📡 Diagnose Speedport WLAN
-          </button>
-          <button class="prompt-chip" data-prompt="Why is my bill €29.75 higher this month? Check FIFA pass charge line items.">
-            💳 Dispute €29.75 Bill Charge
-          </button>
-          <button class="prompt-chip" data-prompt="My Speedport WLAN is slow. Please reboot and optimize my router channel.">
-            ⚡ Remote Speedport Reboot
-          </button>
-          <button class="prompt-chip" data-prompt="Suggest a MagentaMobil 5G package and Magenta TV 4K pass upgrade.">
-            🚀 Recommend Magenta 5G & TV
-          </button>
-          <button class="prompt-chip" data-prompt="Explain why MagentaEins Fiber 1Gbps was recommended for my profile.">
-            🧠 Explainable AI Rationale
-          </button>
-        </div>
-
-        <!-- Human-In-The-Loop Approval Banner (Hidden by Default) -->
-        <div class="hitl-banner" id="hitlBanner" style="display: none;">
-          <div class="hitl-content">
-            <span class="hitl-badge">BNETZA HUMAN APPROVAL REQUIRED</span>
-            <p id="hitlText">The Billing Agent requests supervisor approval: <strong>Apply €29.75 Instant SEPA Credit Refund to Alex Mercer (CUST-101)</strong>.</p>
-            <div class="hitl-actions">
-              <button class="approve-btn" id="approveBtn">✅ Approve & Credit SEPA Refund</button>
-              <button class="reject-btn" id="rejectBtn">❌ Cancel Action</button>
+          <!-- Human-In-The-Loop Approval Banner (Hidden by Default) -->
+          <div class="hitl-banner" id="hitlBanner" style="display: none;">
+            <div class="hitl-content">
+              <span class="hitl-badge">HUMAN APPROVAL REQUIRED</span>
+              <p id="hitlText">The Billing Agent requests supervisor approval: <strong>Apply ₹500.00 Credit Refund to Rahul Sharma (CUST-101)</strong>.</p>
+              <div class="hitl-actions">
+                <button class="approve-btn" id="approveBtn">✅ Approve & Credit Refund</button>
+                <button class="reject-btn" id="rejectBtn">❌ Cancel Action</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Messages Area -->
-        <div class="messages-container" id="messagesContainer">
-          <div class="message assistant-message">
-            <div class="avatar">DT</div>
-            <div class="message-content">
-              <p>Willkommen! I am your <strong>Deutsche Telekom Omnichannel AI Assistant</strong>.</p>
-              <p>I can optimize your Speedport home WLAN, investigate monthly invoice line items, refund unconfirmed add-on charges via SEPA Direct Debit, and recommend personalized MagentaEins 5G & TV bundles synced across <strong>OneShop (Web)</strong> and <strong>OneApp (Mobile)</strong>.</p>
+        <div class="workspace-split">
+          <aside class="quick-picks-panel">
+            <div class="quick-picks-heading">Quick Actions</div>
+            <div class="quick-prompts">
+              <button class="prompt-chip" data-prompt="Check my WiFi speed and router diagnostics in Gurugram right now.">
+                📡 Diagnose Broadband Router
+              </button>
+              <button class="prompt-chip" data-prompt="Why is my bill ₹500 higher this month? Check FIFA pass charge.">
+                💳 Dispute ₹500 FIFA Pass Charge
+              </button>
+              <button class="prompt-chip" data-prompt="My WiFi is slow. Please reboot and optimize my router channel.">
+                ⚡ Remote Channel Reboot
+              </button>
+              <button class="prompt-chip" data-prompt="Suggest a 5G mobile package and Magenta TV 4K pass upgrade.">
+                🚀 Recommend 5G & TV Pass
+              </button>
+              <button class="prompt-chip" data-prompt="Explain why MagentaEins Fiber 1Gbps was recommended for my profile.">
+                🧠 Explainable AI Rationale
+              </button>
+            </div>
+          </aside>
+
+          <div class="ai-chat-panel" id="aiChatPanel">
+            <div class="chat-panel-toolbar">
+              <span class="chat-panel-title">AI Chat</span>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="messages-container" id="messagesContainer">
+              <div class="message assistant-message">
+                <div class="avatar">DT</div>
+                <div class="message-content">
+                  <p>Namaste! I am your <strong>Deutsche Telekom Digital Labs Omnichannel AI Assistant</strong>.</p>
+                  <p>I can optimize your home broadband, investigate invoice line items, refund improper add-on charges, and tailor personalized 5G & Magenta TV bundles synced across <strong>OneShop (Web)</strong> and <strong>OneApp (Mobile)</strong>.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Box -->
+            <div class="input-area">
+              <form id="chatForm">
+                <input type="text" id="userInput" placeholder="Ask about billing, WiFi speed, router reboot, 5G plans, or speak..." autocomplete="off">
+                <button type="button" id="micBtn" class="mic-btn" title="Voice Assistant (Click & Speak)">🎙️</button>
+                <button type="submit" id="sendBtn">
+                  <span>Send</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
             </div>
           </div>
-        </div>
-
-
-        <!-- Input Box -->
-        <div class="input-area">
-          <form id="chatForm">
-            <input type="text" id="userInput" placeholder="Ask about billing, WiFi speed, router reboot, 5G plans, or speak..." autocomplete="off">
-            <button type="button" id="micBtn" class="mic-btn" title="Voice Assistant (Click & Speak)">🎙️</button>
-            <button type="submit" id="sendBtn">
-              <span>Send</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
-            </button>
-          </form>
         </div>
 
       </section>
@@ -295,10 +293,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Checkout Wizard Modal -->
+    <div class="modal-overlay" id="checkoutModal" style="display: none;">
+      <div class="modal-box checkout-modal">
+        <div class="modal-header">
+          <h3>🛒 Smart Checkout</h3>
+          <button class="close-modal" id="closeCheckoutBtn">&times;</button>
+        </div>
+
+        <div class="checkout-steps">
+          <div class="checkout-step active" data-step="1">1. Review</div>
+          <div class="checkout-step" data-step="2">2. Bundle</div>
+          <div class="checkout-step" data-step="3">3. Payment</div>
+          <div class="checkout-step" data-step="4">4. Confirm</div>
+        </div>
+
+        <div class="modal-body" id="checkoutStepContent">
+          <!-- Filled dynamically by app.js -->
+        </div>
+
+        <div class="checkout-actions">
+          <button class="reject-btn" id="checkoutBackBtn" style="display:none;">← Back</button>
+          <button class="checkout-btn" id="checkoutNextBtn">Continue</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script src="app.js?v=2.0.0"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
 
