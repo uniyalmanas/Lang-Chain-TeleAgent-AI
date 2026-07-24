@@ -58,10 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Global Helper to trigger Ask AI & scroll smoothly to live playground
-  window.triggerAskAI = function(promptText) {
-    const playgroundEl = document.getElementById('playground');
-    if (playgroundEl) {
-      playgroundEl.scrollIntoView({ behavior: 'smooth' });
+  window.triggerAskAI = function(promptText, shouldScroll = true) {
+    if (shouldScroll) {
+      const playgroundEl = document.getElementById('playground');
+      if (playgroundEl) {
+        playgroundEl.scrollIntoView({ behavior: 'smooth' });
+      }
     }
 
     const userInput = document.getElementById('userInput');
@@ -163,13 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.prompt-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const promptText = chip.getAttribute('data-prompt');
-      window.triggerAskAI(promptText);
+      window.triggerAskAI(promptText, false);
     });
   });
 
   if (nbaActionBtn) {
     nbaActionBtn.addEventListener('click', () => {
-      window.triggerAskAI('Check my Speedport WiFi speed and router diagnostics in Bonn right now.');
+      window.triggerAskAI('Check my Speedport WiFi speed and router diagnostics in Bonn right now.', false);
     });
   }
 
