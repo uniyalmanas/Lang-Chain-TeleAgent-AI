@@ -140,6 +140,9 @@ body {
 
 .header-right { display: flex; align-items: center; gap: 0.75rem; }
 .mobile-menu-btn { display: none; }
+.icon-close { display: none; }
+body.mobile-menu-open .icon-menu { display: none; }
+body.mobile-menu-open .icon-close { display: block; }
 
 .customer-pill {
   display: flex; align-items: center; gap: 0.35rem;
@@ -539,7 +542,17 @@ body.mode-oneapp .mobile-frame-header, body.mode-oneapp .mobile-home-bar { displ
 }
 
 @media (max-width: 600px) {
-  .header-inner { padding: 0.5rem 0.75rem; gap: 0.5rem; }
+  .mobile-menu-overlay { 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.6); 
+    z-index: 90; 
+    backdrop-filter: blur(4px); 
+  }
+  body.mobile-menu-open .mobile-menu-overlay { display: block; }
+
+  .header-inner { padding: 0.75rem 1rem; gap: 0; }
   
   .mobile-menu-btn { 
     display: block; 
@@ -551,25 +564,45 @@ body.mode-oneapp .mobile-frame-header, body.mode-oneapp .mobile-home-bar { displ
     cursor: pointer; 
     padding: 0.25rem; 
     margin-left: auto; 
+    z-index: 101;
   }
+
+  .nav-links {
+    display: none;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    width: 100%;
+    white-space: normal;
+    padding: 1.5rem 0 0.5rem 0;
+    gap: 0.5rem;
+    overflow-x: visible;
+  }
+
   .header-right { 
     display: none; 
-    position: absolute; 
-    top: 60px; 
-    right: 15px; 
-    background: rgba(15, 23, 42, 0.98); 
-    border: 1px solid var(--border-subtle); 
-    border-radius: var(--radius-lg); 
-    padding: 1.25rem; 
+    grid-column: 1 / -1;
+    width: 100%;
     flex-direction: column; 
     align-items: stretch;
     gap: 0.8rem;
-    z-index: 200; 
-    box-shadow: var(--shadow-lg); 
-    width: 260px;
-    box-sizing: border-box;
+    position: static; 
+    background: transparent; 
+    border: none;
+    border-top: 1px solid var(--border-subtle); 
+    border-radius: 0; 
+    padding: 1rem 0 0.5rem 0;
+    margin-top: 1rem;
+    box-shadow: none; 
   }
-  .header-right.show-menu { display: flex; }
+
+  body.mobile-menu-open .nav-links,
+  body.mobile-menu-open .header-right { 
+    display: flex; 
+  }
+
+  body.mobile-menu-open .site-header {
+    background: rgba(15, 23, 42, 0.98);
+  }
   
   .company-sub { display: none; }
   .product-title { font-size: 0.95rem; }

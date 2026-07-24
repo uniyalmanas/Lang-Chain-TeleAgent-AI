@@ -8,12 +8,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mobile Hamburger Menu Toggle
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const headerRightControls = document.getElementById('headerRightControls');
-  if (mobileMenuBtn && headerRightControls) {
-    mobileMenuBtn.addEventListener('click', () => {
-      headerRightControls.classList.toggle('show-menu');
+  const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+  
+  function toggleMobileMenu() {
+    const isExpanded = document.body.classList.toggle('mobile-menu-open');
+    if (mobileMenuBtn) {
+      mobileMenuBtn.setAttribute('aria-expanded', isExpanded);
+    }
+  }
+  
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+  }
+  if (mobileMenuOverlay) {
+    mobileMenuOverlay.addEventListener('click', () => {
+      if (document.body.classList.contains('mobile-menu-open')) {
+        toggleMobileMenu();
+      }
     });
   }
+
+  // Close mobile menu on link click
+  document.querySelectorAll('.nav-link, .btn-primary-nav').forEach(link => {
+    link.addEventListener('click', () => {
+      if (document.body.classList.contains('mobile-menu-open')) toggleMobileMenu();
+    });
+  });
 
   // Smooth Scroll Active Nav Link Highlight
   const navLinks = document.querySelectorAll('.nav-link');
