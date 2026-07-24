@@ -83,6 +83,12 @@ MOCK_CUSTOMERS = {
 }
 
 class FastVectorEF(EmbeddingFunction):
+    """
+    Lightweight, dependency-free embedding function using hashed token counting.
+    NOTE: This is NOT a semantic embedding model — it does not capture synonyms
+    or contextual meaning. Used here for zero-latency demo purposes.
+    Production upgrade path: sentence-transformers or an API-based embedding model.
+    """
     def __init__(self):
         super().__init__()
     def name(self):
