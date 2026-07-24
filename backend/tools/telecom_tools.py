@@ -1,4 +1,5 @@
 import json
+from typing import Any, cast
 from langchain_core.tools import tool
 import chromadb
 import hashlib
@@ -26,7 +27,7 @@ MOCK_CUSTOMERS = {
         "eligible_for_refund": True,
         "loyalty_tier": "MagentaEins Gold Member (3+ Years)",
         "iban_sepa": "DE89 3704 0044 0532 0130 00",
-        "gdpr_consent": "Verified (BNetzA Compliant)",
+        "gdpr_consent": "Verified",
         "cart": [
             {"id": "ITEM-01", "name": "MagentaZuhause 500 Mbps Fiber Plan", "price": 49.95, "type": "Plan"},
             {"id": "ITEM-02", "name": "FIFA World Cup 4K Sports Pass", "price": 25.00, "type": "Add-on"}
@@ -36,7 +37,7 @@ MOCK_CUSTOMERS = {
         "name": "Sarah Connor",
         "city": "Berlin, Germany",
         "provider": "Deutsche Telekom AG",
-        "segment": "MagentaMobil Unlimited 5G",
+        "segment": "MagentaMobil 5G Unlimited",
         "plan": "MagentaMobil Speed XL Unlimited 5G",
         "router_model": "Speedport Smart 5G Mesh",
         "ip": "80.187.112.45",
@@ -91,12 +92,15 @@ class FastVectorEF(EmbeddingFunction):
     """
     def __init__(self):
         super().__init__()
-    def name(self):
+
+    @staticmethod
+    def name() -> str:
         return "dtdl_fast_vector_ef"
-    def __call__(self, input):
+
+    def __call__(self, input: Any) -> Any:
         vecs = []
         for text in input:
-            tokens = text.lower().split()
+            tokens = str(text).lower().split()
             v = [0.0] * 64
             for tok in tokens:
                 idx = int(hashlib.md5(tok.encode()).hexdigest(), 16) % 64
@@ -142,7 +146,7 @@ def _get_chroma_collection():
                 ]
                 _chroma_collection.add(
                     documents=kb_docs,
-                    metadatas=kb_metadatas,
+                    metadatas=cast(Any, kb_metadatas),
                     ids=[f"doc-0{i+1}" for i in range(len(kb_docs))]
                 )
         except Exception as e:
