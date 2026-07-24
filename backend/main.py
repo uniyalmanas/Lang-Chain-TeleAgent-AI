@@ -23,13 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Compile LangGraph Workflow
-try:
-    agent_graph = create_multi_agent_graph()
-    print("[SUCCESS] LangGraph Multi-Agent Workflow successfully compiled!")
-except Exception as e:
-    print(f"[WARNING] Could not compile graph at startup (Check .env keys): {e}")
-    agent_graph = None
+# Lazy load LangGraph Workflow inside handlers to prevent cold-start import crashes
+agent_graph = None
 
 class ChatRequest(BaseModel):
     message: str
