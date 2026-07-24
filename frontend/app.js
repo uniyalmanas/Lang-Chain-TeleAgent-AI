@@ -44,16 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  window.handleFeedback = function(btn, type) {
-    const container = btn.parentElement;
-    if (type === 'like') {
-      container.innerHTML = '👍 <span style="color:#4ADE80;">Thank you! Positive preference logged for continuous RLHF learning.</span>';
-      appendLog('Continuous Learning', 'Positive feedback recorded (+1.0 reward signal)', 'system');
-    } else {
-      container.innerHTML = '👎 <span style="color:#FF4D4D;">Feedback logged! Model routing weights updated for next session.</span>';
-      appendLog('Continuous Learning', 'Negative feedback recorded (-1.0 penalty signal)', 'system');
-    }
-  };
+
 
 
   // 🎙️ Web Speech API Voice Recognition Handler
