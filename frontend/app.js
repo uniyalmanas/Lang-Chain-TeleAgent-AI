@@ -243,25 +243,11 @@ document.addEventListener('DOMContentLoaded', () => {
           userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
 
           if (event.error === 'no-speech') {
-            appendLog('Voice Assistant', '⚠️ No speech detected. Please click the mic and speak clearly into your microphone.', 'system');
+            appendLog('Voice Assistant', '⚠️ No speech detected. Click mic to try speaking again.', 'system');
           } else if (event.error === 'network') {
-            appendLog('Voice Assistant', '⚠️ Chrome Speech API network blocked on this device (speech.googleapis.com unreachable). Switching to Voice Simulation...', 'system');
-            
-            // Seamless fallback for devices with blocked Chrome Speech API
-            const sampleVoicePrompts = [
-              "Check my Speedport WiFi speed and router diagnostics in Bonn right now.",
-              "Please apply a bill credit refund of €29.75 for the unrecognized FIFA pass charge.",
-              "Recommend a Magenta 5G Unlimited package and Speedport WiFi 6 Mesh Extender."
-            ];
-            const fallbackVoice = sampleVoicePrompts[Math.floor(Math.random() * sampleVoicePrompts.length)];
-            
-            userInput.value = fallbackVoice;
-            appendLog('Voice Assistant', `Transcribed Voice Input: "${fallbackVoice}"`, 'system');
-            setTimeout(() => {
-              chatForm.dispatchEvent(new Event('submit'));
-            }, 300);
+            appendLog('Voice Assistant', '⚠️ Chrome Speech API network blocked on this machine (speech.googleapis.com unreachable). Please check network/adblocker or type query manually.', 'system');
           } else {
-            appendLog('Voice Assistant', `⚠️ Speech error: ${event.error}`, 'system');
+            appendLog('Voice Assistant', `⚠️ Speech recognition stopped: ${event.error}`, 'system');
           }
         };
 
