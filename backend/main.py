@@ -23,8 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Lazy load LangGraph Workflow inside handlers to prevent cold-start import crashes
-agent_graph = None
+# Compile LangGraph Workflow
+try:
+    agent_graph = create_multi_agent_graph()
+    print("[SUCCESS] LangGraph Multi-Agent Workflow successfully compiled!")
+except Exception as e:
+    print(f"[WARNING] Could not compile graph at startup: {e}")
+    agent_graph = None
 
 class ChatRequest(BaseModel):
     message: str
@@ -323,11 +328,10 @@ def mcp_info_endpoint():
         "supported_methods": ["tools/list", "tools/call", "resources/list", "prompts/list"]
     }
 
-# Mount static frontend files ONLY when running locally (not on Vercel)
-if not os.getenv("VERCEL"):
-    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
-    if os.path.exists(frontend_path):
-        app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+# Mount static frontend files if directory exists
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
