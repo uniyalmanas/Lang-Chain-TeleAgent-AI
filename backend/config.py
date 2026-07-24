@@ -16,10 +16,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", 
 
 def get_llm(model_provider: str = "auto"):
     """
-    Returns an initialized LLM based on available API keys.
-    Prefers Groq (llama-3.1-8b-instant), falls back to Gemini (gemini-1.5-flash).
+    Returns an initialized LLM with automatic multi-provider fallback (Groq -> Gemini).
     """
-    if (model_provider == "groq" or model_provider == "auto") and GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here":
+    if GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here":
         try:
             from langchain_groq import ChatGroq
             return ChatGroq(
@@ -30,7 +29,7 @@ def get_llm(model_provider: str = "auto"):
         except Exception as e:
             print(f"Warning: Could not initialize Groq 8b LLM: {e}")
 
-    if (model_provider == "gemini" or model_provider == "auto") and GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
+    if GEMINI_API_KEY and not GEMINI_API_KEY.startswith("AQ.") and GEMINI_API_KEY != "your_gemini_api_key_here":
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             return ChatGoogleGenerativeAI(

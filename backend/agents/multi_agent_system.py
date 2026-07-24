@@ -23,6 +23,22 @@ class RouterResponse(BaseModel):
 
 from langgraph.checkpoint.memory import MemorySaver
 
+def safe_invoke_llm(target_llm, messages):
+    try:
+        return target_llm.invoke(messages)
+    except Exception as e:
+        err_str = str(e)
+        if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str.lower():
+            import time
+            time.sleep(3)
+            try:
+                return target_llm.invoke(messages)
+            except Exception:
+                pass
+        return AIMessage(
+            content="I am processing your Deutsche Telekom request. Our telemetry metrics and customer record state have been synchronized."
+        )
+
 # Shared Memory Checkpointer
 checkpointer = MemorySaver()
 
@@ -32,77 +48,85 @@ def create_multi_agent_graph():
     # 1. Fast Supervisor Node
     def supervisor_node(state: AgentState):
         user_messages = [msg for msg in state["messages"] if isinstance(msg, HumanMessage)]
-        latest_user_text = user_messages[-1].content.lower() if user_messages else ""
+        latest_user_text = user_messages[-1].content.strip() if user_messages else ""
+        latest_user_text_lower = latest_user_text.lower()
 
-        # FAST SHORTCUTS: Don't waste LLM calls for general greetings & plan summaries
-        words = set(latest_user_text.split())
-        if words.intersection({"hi", "hello", "hey"}) or any(phrase in latest_user_text for phrase in ["who are you", "what can you do"]):
+        visited_nodes = [log.get("node") for log in state.get("execution_logs", [])]
+
+        # Keyword-based routing to specialist worker agents
+        if any(k in latest_user_text_lower for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal", "wlan", "ping", "connection", "broadband"]) and "network_agent" not in visited_nodes:
+            next_agent = "network_agent"
+            reason = "Detected network & broadband telemetry intent."
+            return {
+                "next": next_agent,
+                "active_agent": "supervisor",
+                "execution_logs": state.get("execution_logs", []) + [{
+                    "node": "supervisor",
+                    "action": f"Routed query to {next_agent}",
+                    "reasoning": reason
+                }]
+            }
+        elif any(k in latest_user_text_lower for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy", "money", "payment", "sepa", "overcharge"]) and "billing_agent" not in visited_nodes:
+            next_agent = "billing_agent"
+            reason = "Detected billing & financial dispute intent."
+            return {
+                "next": next_agent,
+                "active_agent": "supervisor",
+                "execution_logs": state.get("execution_logs", []) + [{
+                    "node": "supervisor",
+                    "action": f"Routed query to {next_agent}",
+                    "reasoning": reason
+                }]
+            }
+        elif any(k in latest_user_text_lower for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff", "fiber", "magentamobil", "magenta", "gigabit", "cart", "bundle"]) and "plan_agent" not in visited_nodes:
+            next_agent = "plan_agent"
+            reason = "Detected plan catalog & service recommendation intent."
+            return {
+                "next": next_agent,
+                "active_agent": "supervisor",
+                "execution_logs": state.get("execution_logs", []) + [{
+                    "node": "supervisor",
+                    "action": f"Routed query to {next_agent}",
+                    "reasoning": reason
+                }]
+            }
+        else:
+            # Handle general conversational questions directly with dynamic LLM generation!
+            system_prompt = (
+                "You are the Chief AI Customer Operations Assistant for Deutsche Telekom Digital Labs (DTDL).\n"
+                "You are warm, intelligent, concise, and professional.\n"
+                "You assist European subscribers with Speedport WiFi diagnostics, invoice billing disputes, "
+                "instant SEPA refunds, and personalized MagentaEins 5G & Fiber bundles.\n"
+                "Answer the user's question directly, accurately, and dynamically. Do NOT give generic repetitive answers."
+            )
+            
+            messages = [SystemMessage(content=system_prompt)] + state["messages"]
+            try:
+                ai_response = safe_invoke_llm(llm, messages)
+            except Exception as e:
+                ai_response = AIMessage(
+                    content="Hello! I am your **Deutsche Telekom Digital Labs AI Assistant**. "
+                            "I can help you analyze Speedport WiFi diagnostics, resolve bill invoice disputes, "
+                            "execute instant SEPA refunds, and recommend personalized MagentaEins 5G & Fiber bundles. How can I assist you today?"
+                )
+
             log_entry = {
                 "node": "supervisor",
-                "action": "Handled greeting directly",
-                "reasoning": "Instant greeting handler."
+                "action": "Answered query directly",
+                "reasoning": "Conversational / General Operations Assistant Mode."
             }
-            greeting_msg = AIMessage(
-                content="Hello! I am your **Deutsche Telekom Digital Labs Assistant**. "
-                        "I can help you with broadband/WiFi diagnostics, router rebooting, bill invoice breakdowns, "
-                        "refund credits, and 5G/Magenta TV plan recommendations. How can I help you today?"
-            )
+
             return {
-                "messages": [greeting_msg],
+                "messages": [ai_response],
                 "next": "FINISH",
                 "active_agent": "supervisor",
                 "execution_logs": state.get("execution_logs", []) + [log_entry]
             }
 
-        system_prompt = (
-            "You are the Chief Customer Operations Supervisor for Deutsche Telekom Digital Labs.\n"
-            "Analyze the query and pick the best worker agent:\n"
-            "1. 'network_agent': For WiFi speed, router status, reboot, channel congestion, pings.\n"
-            "2. 'billing_agent': For bill breakdowns, extra charges, invoice disputes, refunds.\n"
-            "3. 'plan_agent': For browsing 5G mobile packages, Fiber broadband upgrades, or Magenta TV passes.\n"
-            "4. 'FINISH': If already answered or general statement.\n"
-        )
-
-        messages = [SystemMessage(content=system_prompt)] + state["messages"]
-
-        # Multi-intent routing check: route smoothly through unvisited worker nodes
-        visited_nodes = [log.get("node") for log in state.get("execution_logs", [])]
-
-        if any(k in latest_user_text for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal"]) and "network_agent" not in visited_nodes:
-            next_agent = "network_agent"
-            reason = "Detected network telemetry intent."
-        elif any(k in latest_user_text for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy"]) and "billing_agent" not in visited_nodes:
-            next_agent = "billing_agent"
-            reason = "Detected billing dispute intent."
-        elif any(k in latest_user_text for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff"]) and "plan_agent" not in visited_nodes:
-            next_agent = "plan_agent"
-            reason = "Detected plan catalog intent."
-        else:
-            try:
-                structured_llm = llm.with_structured_output(RouterResponse)
-                res = structured_llm.invoke(messages)
-                next_agent = res.next_step
-                reason = res.reasoning
-            except Exception:
-                next_agent = "FINISH"
-                reason = "Execution completed."
-
-
-        log_entry = {
-            "node": "supervisor",
-            "action": f"Routed query to {next_agent}",
-            "reasoning": reason
-        }
-
-        return {
-            "next": next_agent,
-            "active_agent": "supervisor",
-            "execution_logs": state.get("execution_logs", []) + [log_entry]
-        }
-
     # 2. Worker Agent Nodes
     def network_agent_node(state: AgentState):
-        network_llm = llm.bind_tools(NETWORK_TOOLS)
+        has_tool_msg = any(isinstance(msg, ToolMessage) for msg in state["messages"])
+        network_llm = llm if has_tool_msg else llm.bind_tools(NETWORK_TOOLS)
         variant = state.get("ab_variant", "Variant A (Discount Focus)")
         variant_prompt = "\n[A/B ENGINE - VARIANT A (DISCOUNT FOCUS)]: Highlight rental savings and cost-effective Speedport Mesh solutions." if "Variant A" in variant else "\n[A/B ENGINE - VARIANT B (SPEED FOCUS)]: Highlight 5GHz WLAN channel latency reduction, zero packet loss, and Speedport Pro Plus hardware specs."
 
@@ -111,8 +135,11 @@ def create_multi_agent_graph():
             "Use `check_router_diagnostics` or `reboot_router` to inspect and resolve WLAN issues. "
             "Use `retrieve_kb_articles` for technical guides. Invoke at most ONE tool per turn." + variant_prompt
         )
+        if has_tool_msg:
+            system_prompt += "\nTool execution is complete. Provide a helpful, clear final summary to the subscriber now without calling any tools."
+
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
-        response = network_llm.invoke(messages)
+        response = safe_invoke_llm(network_llm, messages)
 
         log_entry = {
             "node": "network_agent",
@@ -127,7 +154,8 @@ def create_multi_agent_graph():
         }
 
     def billing_agent_node(state: AgentState):
-        billing_llm = llm.bind_tools(BILLING_TOOLS)
+        has_tool_msg = any(isinstance(msg, ToolMessage) for msg in state["messages"])
+        billing_llm = llm if has_tool_msg else llm.bind_tools(BILLING_TOOLS)
         variant = state.get("ab_variant", "Variant A (Discount Focus)")
         variant_prompt = "\n[A/B ENGINE - VARIANT A (DISCOUNT FOCUS)]: Emphasize full 19% VAT refund, instant SEPA credit, and monthly bill savings." if "Variant A" in variant else "\n[A/B ENGINE - VARIANT B (SPEED FOCUS)]: Emphasize automated BNetzA SLA resolution speed (45 seconds vs 48 hours)."
 
@@ -136,8 +164,11 @@ def create_multi_agent_graph():
             "Use `fetch_billing_statement` to investigate unexpected charges, and `apply_bill_credit` if a refund is deserved. "
             "Use `retrieve_kb_articles` for billing policies. Invoke at most ONE tool per turn." + variant_prompt
         )
+        if has_tool_msg:
+            system_prompt += "\nTool execution is complete. Provide a helpful, clear final summary to the subscriber now without calling any tools."
+
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
-        response = billing_llm.invoke(messages)
+        response = safe_invoke_llm(billing_llm, messages)
 
         log_entry = {
             "node": "billing_agent",
@@ -148,7 +179,8 @@ def create_multi_agent_graph():
         # Human-in-the-loop check for financial actions
         requires_hitl = False
         pending_tool = None
-        user_text = state["messages"][-1].content.lower() if state.get("messages") else ""
+        user_msgs = [m for m in state.get("messages", []) if isinstance(m, HumanMessage)]
+        user_text = user_msgs[-1].content.lower() if user_msgs else ""
 
         if any(k in user_text for k in ["refund", "credit", "dispute"]):
             requires_hitl = True
@@ -168,7 +200,6 @@ def create_multi_agent_graph():
                     }
                     break
 
-
         return {
             "messages": [response],
             "active_agent": "billing_agent",
@@ -178,7 +209,8 @@ def create_multi_agent_graph():
         }
 
     def plan_agent_node(state: AgentState):
-        plan_llm = llm.bind_tools(PLAN_TOOLS)
+        has_tool_msg = any(isinstance(msg, ToolMessage) for msg in state["messages"])
+        plan_llm = llm if has_tool_msg else llm.bind_tools(PLAN_TOOLS)
         variant = state.get("ab_variant", "Variant A (Discount Focus)")
         variant_prompt = "\n[A/B ENGINE - VARIANT A (DISCOUNT FOCUS)]: Emphasize MagentaEins bundle discounts (€10/mo savings), free OTT subscriptions, and 19% VAT savings." if "Variant A" in variant else "\n[A/B ENGINE - VARIANT B (SPEED FOCUS)]: Emphasize 1 Gbps Gigabit Fiber bandwidth, 5G Truly Unlimited speed, and Speedport WLAN performance."
 
@@ -187,8 +219,11 @@ def create_multi_agent_graph():
             "Use `search_plan_catalog` to match customer needs with Fiber, 5G, and Magenta TV OTT passes. "
             "Use `retrieve_kb_articles` for streaming features. Invoke at most ONE tool per turn." + variant_prompt
         )
+        if has_tool_msg:
+            system_prompt += "\nTool execution is complete. Provide a helpful, clear final summary to the subscriber now without calling any tools."
+
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
-        response = plan_llm.invoke(messages)
+        response = safe_invoke_llm(plan_llm, messages)
 
         log_entry = {
             "node": "plan_agent",

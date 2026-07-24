@@ -414,67 +414,102 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function renderCartData(data, customerId) {
+    const customerNameEl = document.getElementById('cartCustomerName');
+    const cartItemsList = document.getElementById('cartItemsList');
+    const cartSubtotal = document.getElementById('cartSubtotal');
+    const cartDiscount = document.getElementById('cartDiscount');
+    const cartTotal = document.getElementById('cartTotal');
+    const cartCount = document.getElementById('cartCount');
+    const cartNudgeBox = document.getElementById('cartNudgeBox');
+
+    if (customerNameEl && customerId) {
+      if (customerId === 'CUST-101') customerNameEl.textContent = 'Alex Mercer (Bonn, Germany)';
+      else if (customerId === 'CUST-102') customerNameEl.textContent = 'Sarah Connor (Berlin, Germany)';
+      else customerNameEl.textContent = 'Lukas Weber (Frankfurt, Germany)';
+    }
+
+    let itemsHTML = '';
+    if (data.cart_items && data.cart_items.length > 0) {
+      data.cart_items.forEach(item => {
+        const itemId = item.id || item.name;
+        itemsHTML += `
+          <div class="cart-item-row">
+            <div class="cart-item-info">
+              <strong>${item.name}</strong>
+              <span>${item.type}</span>
+            </div>
+            <div class="cart-item-right">
+              <div class="cart-item-price">€${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</div>
+              <button class="remove-item-btn" onclick="removeFromCart('${itemId}')" title="Remove item">✕</button>
+            </div>
+          </div>
+        `;
+      });
+      if (cartCount) cartCount.textContent = data.cart_items.length;
+    } else {
+      itemsHTML = '<p style="font-size:0.8rem; color:var(--text-muted);">Cart is empty.</p>';
+      if (cartCount) cartCount.textContent = '0';
+    }
+
+    if (cartItemsList) cartItemsList.innerHTML = itemsHTML;
+    if (cartSubtotal) cartSubtotal.textContent = data.subtotal_base || data.subtotal || '€0.00';
+    if (cartDiscount) cartDiscount.textContent = `-${data.bundle_discount || '€0.00'}`;
+    if (cartTotal) cartTotal.textContent = data.total || '€0.00';
+
+    if (cartNudgeBox) {
+      if (data.applied_nudge) {
+        cartNudgeBox.innerHTML = `<div class="nudge-icon">🎉</div> <div class="nudge-text">${data.applied_nudge}</div>`;
+      } else {
+        cartNudgeBox.innerHTML = `<div class="nudge-icon">🎁</div> <div class="nudge-text">Add <strong>Speedport WiFi 6 Mesh Disc (€4.95/mo)</strong> to unlock MagentaEins discount!</div>`;
+      }
+    }
+  }
+
   async function fetchCart() {
     const customerId = customerSelect ? customerSelect.value : 'CUST-101';
     try {
       const res = await fetch(`/api/cart/${customerId}`);
       const data = await res.json();
-
-      const customerNameEl = document.getElementById('cartCustomerName');
-      const cartItemsList = document.getElementById('cartItemsList');
-      const cartSubtotal = document.getElementById('cartSubtotal');
-      const cartDiscount = document.getElementById('cartDiscount');
-      const cartTotal = document.getElementById('cartTotal');
-      const cartCount = document.getElementById('cartCount');
-      const cartNudgeBox = document.getElementById('cartNudgeBox');
-
-      if (customerNameEl) {
-        if (customerId === 'CUST-101') customerNameEl.textContent = 'Alex Mercer (Bonn, Germany)';
-        else if (customerId === 'CUST-102') customerNameEl.textContent = 'Sarah Connor (Berlin, Germany)';
-        else customerNameEl.textContent = 'Lukas Weber (Frankfurt, Germany)';
-      }
-
-      let itemsHTML = '';
-      if (data.cart_items && data.cart_items.length > 0) {
-        data.cart_items.forEach(item => {
-          itemsHTML += `
-            <div class="cart-item-row">
-              <div class="cart-item-info">
-                <strong>${item.name}</strong>
-                <span>${item.type}</span>
-              </div>
-              <div class="cart-item-price">€${item.price.toFixed(2)}</div>
-            </div>
-          `;
-        });
-        if (cartCount) cartCount.textContent = data.cart_items.length;
-      } else {
-        itemsHTML = '<p style="font-size:0.8rem; color:var(--text-muted);">Cart is empty.</p>';
-        if (cartCount) cartCount.textContent = '0';
-      }
-
-      if (cartItemsList) cartItemsList.innerHTML = itemsHTML;
-      if (cartSubtotal) cartSubtotal.textContent = data.subtotal_base || data.subtotal;
-      if (cartDiscount) cartDiscount.textContent = `-${data.bundle_discount}`;
-      if (cartTotal) cartTotal.textContent = data.total;
-
-      if (cartNudgeBox) {
-        if (data.applied_nudge) {
-          cartNudgeBox.innerHTML = `<div class="nudge-icon">🎉</div> <div class="nudge-text">${data.applied_nudge}</div>`;
-        } else {
-          cartNudgeBox.innerHTML = `<div class="nudge-icon">🎁</div> <div class="nudge-text">Add <strong>Speedport WiFi 6 Mesh Disc (€4.95/mo)</strong> to unlock MagentaEins discount!</div>`;
-        }
-      }
-
+      renderCartData(data, customerId);
     } catch (err) {
       console.error('Failed to fetch cart:', err);
     }
   }
 
-  window.addToCart = function(name, price, type) {
-    fetchCart();
-    if (cartDrawer) cartDrawer.classList.add('open');
-    appendLog('Smart Cart', `Added [${name}] (€${price.toFixed(2)}) to active cart`, 'system');
+  window.addToCart = async function(name, price, type = 'Add-on') {
+    const customerId = customerSelect ? customerSelect.value : 'CUST-101';
+    try {
+      const res = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: customerId, name: name, price: price, type: type })
+      });
+      const data = await res.json();
+      renderCartData(data, customerId);
+      if (cartDrawer) cartDrawer.classList.add('open');
+      appendLog('Smart Cart', `Added [${name}] (€${price.toFixed(2)}) to active cart`, 'system');
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+      fetchCart();
+    }
+  };
+
+  window.removeFromCart = async function(itemId) {
+    const customerId = customerSelect ? customerSelect.value : 'CUST-101';
+    try {
+      const res = await fetch('/api/cart/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: customerId, item_id: itemId })
+      });
+      const data = await res.json();
+      renderCartData(data, customerId);
+      appendLog('Smart Cart', `Removed item [${itemId}] from cart`, 'system');
+    } catch (err) {
+      console.error('Failed to remove from cart:', err);
+      fetchCart();
+    }
   };
 
   // 8. Explainable AI Modal Controls

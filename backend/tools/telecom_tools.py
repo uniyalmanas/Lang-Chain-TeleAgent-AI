@@ -1,9 +1,14 @@
 import json
-from langchain_core.tools import tool
-import chromadb
 import hashlib
 import math
-from chromadb.api.types import EmbeddingFunction
+from typing import Any, cast
+from langchain_core.tools import tool
+try:
+    import chromadb
+    from chromadb.api.types import EmbeddingFunction
+except Exception as _chroma_err:
+    chromadb = None
+    EmbeddingFunction = object
 
 # Database records for Deutsche Telekom European Subscribers (Bonn, Berlin, Frankfurt)
 MOCK_CUSTOMERS = {
@@ -91,8 +96,11 @@ class FastVectorEF(EmbeddingFunction):
     """
     def __init__(self):
         super().__init__()
-    def name(self):
+
+    @staticmethod
+    def name():
         return "dtdl_fast_vector_ef"
+
     def __call__(self, input):
         vecs = []
         for text in input:
@@ -142,7 +150,7 @@ def _get_chroma_collection():
                 ]
                 _chroma_collection.add(
                     documents=kb_docs,
-                    metadatas=kb_metadatas,
+                    metadatas=cast(Any, kb_metadatas),
                     ids=[f"doc-0{i+1}" for i in range(len(kb_docs))]
                 )
         except Exception as e:
@@ -366,6 +374,21 @@ def optimize_smart_cart(customer_id: str = "CUST-101") -> str:
         "applied_nudge": bundle_nudge,
         "sepa_payment_ready": True
     }, indent=2)
+
+def add_item_to_cart(customer_id: str, name: str, price: float, item_type: str = "Add-on") -> dict:
+    customer = MOCK_CUSTOMERS.get(customer_id, MOCK_CUSTOMERS["CUST-101"])
+    if "cart" not in customer:
+        customer["cart"] = []
+    item_id = f"ITEM-{len(customer['cart']) + 1:02d}"
+    new_item = {"id": item_id, "name": name, "price": price, "type": item_type}
+    customer["cart"].append(new_item)
+    return json.loads(optimize_smart_cart.invoke({"customer_id": customer_id}))
+
+def remove_item_from_cart(customer_id: str, item_id: str) -> dict:
+    customer = MOCK_CUSTOMERS.get(customer_id, MOCK_CUSTOMERS["CUST-101"])
+    if "cart" in customer:
+        customer["cart"] = [item for item in customer["cart"] if item.get("id") != item_id and item.get("name") != item_id]
+    return json.loads(optimize_smart_cart.invoke({"customer_id": customer_id}))
 
 @tool
 def retrieve_kb_articles(query: str) -> str:

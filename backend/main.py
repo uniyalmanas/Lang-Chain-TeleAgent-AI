@@ -9,6 +9,7 @@ user_site = site.getusersitepackages()
 if user_site not in sys.path:
     sys.path.insert(0, user_site)
 
+from typing import Optional, Union, Any, Dict, List
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -50,6 +51,16 @@ class ApproveRequest(BaseModel):
 class FeedbackRequest(BaseModel):
     customer_id: str = "CUST-101"
     rating: str = "like"
+
+class AddToCartRequest(BaseModel):
+    customer_id: str = "CUST-101"
+    name: str
+    price: float
+    type: str = "Add-on"
+
+class RemoveFromCartRequest(BaseModel):
+    customer_id: str = "CUST-101"
+    item_id: str
 
 @app.get("/api/health")
 def health_check():
@@ -129,6 +140,16 @@ def get_cart(customer_id: str):
     result_json = optimize_smart_cart.invoke({"customer_id": customer_id})
     import json
     return json.loads(result_json)
+
+@app.post("/api/cart/add")
+def add_to_cart(request: AddToCartRequest):
+    from backend.tools.telecom_tools import add_item_to_cart
+    return add_item_to_cart(request.customer_id, request.name, request.price, request.type)
+
+@app.post("/api/cart/remove")
+def remove_from_cart(request: RemoveFromCartRequest):
+    from backend.tools.telecom_tools import remove_item_from_cart
+    return remove_item_from_cart(request.customer_id, request.item_id)
 
 @app.get("/api/explainable-ai/{product_id}")
 def get_xai_explanation(product_id: str, customer_id: str = "CUST-101"):
