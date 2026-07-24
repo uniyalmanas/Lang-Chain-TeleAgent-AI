@@ -51,11 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const micBtn = document.getElementById('micBtn');
   if (micBtn) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'de-DE'; // German / European Speech Recognition
+
+      recognition.lang = navigator.language || 'en-US';
 
       micBtn.addEventListener('click', () => {
         if (micBtn.classList.contains('listening')) {
@@ -66,13 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.start();
             micBtn.classList.add('listening');
             userInput.placeholder = "Listening to your voice command...";
-            appendLog('Voice Assistant', 'Listening via Web Speech API (de-DE)...', 'system');
+            appendLog('Voice Assistant', `Listening via Web Speech API (${recognition.lang})...`, 'system');
           } catch (e) {
             console.error('Speech recognition error:', e);
           }
         }
       });
-
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -86,8 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
       recognition.onerror = (event) => {
         micBtn.classList.remove('listening');
         userInput.placeholder = "Ask about billing, WiFi speed, router reboot, 5G plans, or speak...";
-        appendLog('Voice Assistant', `Speech error: ${event.error}`, 'system');
+        if (event.error === 'network') {
+          appendLog('Voice Assistant', 'Browser speech cloud service unavailable on local HTTP. Please type query or click prompt chips.', 'system');
+        } else {
+          appendLog('Voice Assistant', `Speech error: ${event.error}`, 'system');
+        }
       };
+   };
 
       recognition.onend = () => {
         micBtn.classList.remove('listening');
