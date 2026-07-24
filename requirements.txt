@@ -10,3 +10,4 @@ python-dotenv>=1.0.0
 chromadb>=0.4.24
 tiktoken>=0.6.0
 requests>=2.31.0
+sentence-transformers

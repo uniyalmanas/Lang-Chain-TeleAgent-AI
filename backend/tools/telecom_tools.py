@@ -137,7 +137,6 @@ def _get_chroma_collection():
                 pass
             _chroma_collection = _chroma_client.get_or_create_collection(
                 name="dtdl_telecom_rag",
-                # embedding_function=FastVectorEF()
                 embedding_function=SemanticEF()
             )
 
