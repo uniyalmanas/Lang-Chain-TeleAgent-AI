@@ -4,6 +4,7 @@ import chromadb
 import hashlib
 import math
 from chromadb.api.types import EmbeddingFunction
+from sentence_transformers import SentenceTransformer
 
 # Database records for Deutsche Telekom European Subscribers (Bonn, Berlin, Frankfurt)
 MOCK_CUSTOMERS = {
@@ -105,6 +106,22 @@ class FastVectorEF(EmbeddingFunction):
             vecs.append([x / norm for x in v])
         return vecs
 
+class SemanticEF(EmbeddingFunction):
+    """
+    Real semantic embeddings using sentence-transformers (all-MiniLM-L6-v2).
+    Unlike FastVectorEF (hashed bag-of-words), this captures actual meaning
+    and synonyms. Kept alongside FastVectorEF for comparison/fallback.
+    """
+    def __init__(self):
+        super().__init__()
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    def name(self):
+        return "dtdl_semantic_ef"
+
+    def __call__(self, input):
+        return self.model.encode(input, convert_to_numpy=True).tolist()
+
 # Initialize ChromaDB Vector Store Client for Real Vector RAG Queries
 _chroma_client = None
 _chroma_collection = None
@@ -114,9 +131,14 @@ def _get_chroma_collection():
     if _chroma_collection is None:
         try:
             _chroma_client = chromadb.EphemeralClient()
+            try:
+                _chroma_client.delete_collection("dtdl_telecom_rag")
+            except Exception:
+                pass
             _chroma_collection = _chroma_client.get_or_create_collection(
                 name="dtdl_telecom_rag",
-                embedding_function=FastVectorEF()
+                # embedding_function=FastVectorEF()
+                embedding_function=SemanticEF()
             )
 
             if _chroma_collection.count() == 0:
