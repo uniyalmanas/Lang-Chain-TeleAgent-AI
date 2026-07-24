@@ -84,6 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (customerSelect) {
     customerSelect.addEventListener('change', () => {
       const selectedId = customerSelect.value;
+      const ecomNameEl = document.getElementById('ecomCustomerName');
+      if (ecomNameEl) {
+        if (selectedId === 'CUST-101') ecomNameEl.textContent = 'Alex Mercer (Bonn Context Active)';
+        else if (selectedId === 'CUST-102') ecomNameEl.textContent = 'Sarah Connor (Berlin Context Active)';
+        else ecomNameEl.textContent = 'Lukas Weber (Frankfurt Context Active)';
+      }
       appendLog('Subscriber Engine', `Switched active subscriber context to [${selectedId}]`, 'system');
       fetchCart();
     });
