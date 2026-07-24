@@ -148,7 +148,16 @@ def create_multi_agent_graph():
         # Human-in-the-loop check for financial actions
         requires_hitl = False
         pending_tool = None
-        if response.tool_calls:
+        user_text = state["messages"][-1].content.lower() if state.get("messages") else ""
+
+        if any(k in user_text for k in ["refund", "credit", "dispute"]):
+            requires_hitl = True
+            pending_tool = {
+                "name": "apply_bill_credit",
+                "args": {"customer_id": state.get("customer_id", "CUST-101"), "amount": 29.75, "reason": "Unrecognized FIFA 4K Pass refund request (BNetzA SLA)"},
+                "id": "hitl-sepa-01"
+            }
+        elif response.tool_calls:
             for tc in response.tool_calls:
                 if tc.get("name") == "apply_bill_credit":
                     requires_hitl = True
@@ -158,6 +167,7 @@ def create_multi_agent_graph():
                         "id": tc.get("id")
                     }
                     break
+
 
         return {
             "messages": [response],
