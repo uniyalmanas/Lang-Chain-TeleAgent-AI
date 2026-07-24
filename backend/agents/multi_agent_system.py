@@ -40,8 +40,8 @@ def _create_checkpointer():
 
 checkpointer = _create_checkpointer()
 
-def create_multi_agent_graph():
-    llm = get_llm(model_provider="auto")
+def create_multi_agent_graph(model_provider: str = "auto"):
+    llm = get_llm(model_provider=model_provider)
 
     # 1. Fast Supervisor Node
     def supervisor_node(state: AgentState):

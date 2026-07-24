@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
 from backend.agents.multi_agent_system import create_multi_agent_graph
+from backend.config import get_fallback_provider, is_provider_error
 from backend.persistence import log_feedback, get_feedback_summary
 
 app = FastAPI(title="DTDL TeleAgent - Multi-Agent AI Platform", version="1.0.0")
@@ -27,9 +28,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Compile LangGraph Workflow
+# Compile LangGraph Workflow (Groq-first via "auto")
+active_llm_provider = "auto"
 try:
-    agent_graph = create_multi_agent_graph()
+    agent_graph = create_multi_agent_graph(model_provider=active_llm_provider)
     print("[SUCCESS] LangGraph Multi-Agent Workflow successfully compiled!")
 except Exception as e:
     print(f"[WARNING] Could not compile graph at startup (Check .env keys): {e}")
@@ -125,10 +127,10 @@ def feedback_summary():
 
 @app.post("/api/chat")
 def chat_endpoint(request: ChatRequest):
-    global agent_graph
+    global agent_graph, active_llm_provider
     if not agent_graph:
         try:
-            agent_graph = create_multi_agent_graph()
+            agent_graph = create_multi_agent_graph(model_provider=active_llm_provider)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Configuration error: {str(e)}. Check your GROQ_API_KEY or GEMINI_API_KEY in .env.")
 
@@ -139,14 +141,25 @@ def chat_endpoint(request: ChatRequest):
         final_state = agent_graph.invoke(input_state, config=config)
     except Exception as e:
         err_msg = str(e)
-        if "rate_limit" in err_msg.lower() or "429" in err_msg or "tool_use_failed" in err_msg:
-            print(f"[RETRY FALLBACK] Switching graph to Gemini provider due to provider error: {err_msg[:100]}...")
+        if is_provider_error(err_msg):
+            fallback_provider = get_fallback_provider(active_llm_provider)
+            print(
+                f"[RETRY FALLBACK] Switching from {active_llm_provider} to "
+                f"{fallback_provider} due to provider error: {err_msg[:120]}..."
+            )
             try:
-                from backend.agents.multi_agent_system import create_multi_agent_graph
-                fallback_graph = create_multi_agent_graph()
+                fallback_graph = create_multi_agent_graph(model_provider=fallback_provider)
                 final_state = fallback_graph.invoke(input_state, config=config)
-            except Exception:
-                raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
+                agent_graph = fallback_graph
+                active_llm_provider = fallback_provider
+            except Exception as fallback_err:
+                raise HTTPException(
+                    status_code=500,
+                    detail=(
+                        f"Primary provider failed ({err_msg[:120]}). "
+                        f"Fallback to {fallback_provider} also failed: {fallback_err}"
+                    ),
+                )
         else:
             raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
 

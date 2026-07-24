@@ -44,3 +44,22 @@ def get_llm(model_provider: str = "auto"):
     raise ValueError(
         "No valid API keys found! Please set GROQ_API_KEY or GEMINI_API_KEY in your .env file."
     )
+
+
+def get_fallback_provider(current_provider: str) -> str:
+    """Return the alternate LLM provider when the primary hits rate limits or errors."""
+    if current_provider == "groq":
+        return "gemini"
+    if current_provider == "gemini":
+        return "groq"
+    # "auto" resolves to Groq first, so Gemini is the natural fallback.
+    return "gemini"
+
+
+def is_provider_error(error_message: str) -> bool:
+    """Detect LLM provider failures that should trigger a fallback retry."""
+    lowered = error_message.lower()
+    return any(
+        marker in lowered
+        for marker in ("rate_limit", "429", "tool_use_failed", "quota", "resource_exhausted")
+    )
