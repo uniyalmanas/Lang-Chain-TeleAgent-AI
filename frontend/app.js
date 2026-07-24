@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearChatBtn.addEventListener('click', () => {
       messagesContainer.innerHTML = `
         <div class="message assistant-message">
-          <div class="avatar">DT</div>
+          <div class="avatar"><img src="public/logo.png" alt="Logo" style="max-width: 100%; max-height: 100%;"></div>
           <div class="message-content">
             <div class="assistant-welcome-header">
               <span class="welcome-badge">DEUTSCHE TELEKOM DIGITAL LABS</span>
@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', `${sender}-message`);
-    const avatarText = sender === 'user' ? 'YOU' : 'DT';
+    const avatarContent = sender === 'user' ? 'YOU' : '<img src="public/logo.png" alt="Logo" style="max-width: 100%; max-height: 100%;">';
     
     let toolCardsHTML = '';
     if (toolOutputs && toolOutputs.length > 0) {
@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     msgDiv.innerHTML = `
-      <div class="avatar">${avatarText}</div>
+      <div class="avatar">${avatarContent}</div>
       <div class="message-content">
         <p>${formatMarkdown(text)}</p>
         ${toolCardsHTML}
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
     msgDiv.id = id;
 
     msgDiv.innerHTML = `
-      <div class="avatar">DT</div>
+      <div class="avatar"><img src="public/logo.png" alt="Logo" style="max-width: 100%; max-height: 100%;"></div>
       <div class="message-content">
         <p><em>Thinking & running LangGraph state workflow...</em></p>
       </div>

@@ -202,7 +202,7 @@ body {
 
 .gradient-text {
   background: linear-gradient(135deg, var(--dt-magenta-light) 0%, var(--dt-cyan) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
 
 .hero-subtext {
@@ -358,9 +358,9 @@ body.mode-oneapp .mobile-frame-header, body.mode-oneapp .mobile-home-bar { displ
 .nba-content p { font-size: 0.78rem; }
 .nba-btn { background: var(--dt-cyan); color: #05070A; border: none; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; padding: 0.4rem 0.85rem; border-radius: var(--radius-sm); cursor: pointer; }
 
-.quick-prompts-bar { display: flex; gap: 0.5rem; padding: 0.5rem 1.25rem; overflow-x: auto; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 14, 23, 0.3); }
-.prompt-chip { background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.75rem; padding: 0.35rem 0.75rem; border-radius: var(--radius-full); cursor: pointer; white-space: nowrap; }
-.prompt-chip:hover { background: rgba(226, 0, 116, 0.15); color: #fff; border-color: var(--dt-magenta); }
+.quick-prompts-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 14, 23, 0.3); align-items: center; justify-content: center; }
+.prompt-chip { background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.75rem; padding: 0.4rem 0.85rem; border-radius: var(--radius-full); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; transition: var(--transition-fast); }
+.prompt-chip:hover { background: rgba(226, 0, 116, 0.15); color: #fff; border-color: var(--dt-magenta); transform: translateY(-1px); }
 
 .hitl-banner { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 2px solid var(--dt-red); padding: 0.85rem 1.25rem; }
 .hitl-badge { font-size: 0.65rem; font-weight: 800; color: #fff; background: var(--dt-red); padding: 0.2rem 0.6rem; border-radius: var(--radius-full); display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
