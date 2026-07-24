@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const API_URL = '/api/chat';
   let currentChannel = 'OneShop Web';
   let currentAbVariant = 'Variant A (Discount Focus)';
+  let chatThreadId = `session_${Date.now()}`;
 
   // A/B Testing Recommendation Engine Handlers
   const btnVariantA = document.getElementById('btnVariantA');
@@ -140,10 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
     openCartBtn.addEventListener('click', () => {
       fetchCart();
       cartDrawer.classList.add('open');
+      startAbandonmentTimer();
     });
 
     closeCartBtn.addEventListener('click', () => {
       cartDrawer.classList.remove('open');
+      clearAbandonmentTimer();
     });
   }
 
@@ -187,9 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (cartItemsList) cartItemsList.innerHTML = itemsHTML;
-      if (cartSubtotal) cartSubtotal.textContent = data.subtotal;
-      if (cartDiscount) cartDiscount.textContent = `-${data.bundle_discount}`;
-      if (cartTotal) cartTotal.textContent = data.total;
+      if (cartSubtotal) cartSubtotal.textContent = data.subtotal_base || data.subtotal || '₹0.00';
+      if (cartDiscount) cartDiscount.textContent = `-${(data.bundle_discount || '₹0.00').replace('₹', '')}`;
+      if (cartTotal) cartTotal.textContent = data.total || '₹0.00';
 
       if (cartNudgeBox) {
         if (data.applied_nudge) {
@@ -242,6 +245,235 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ========== CHECKOUT FUNNEL ==========
+  const checkoutModal = document.getElementById('checkoutModal');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const closeCheckoutBtn = document.getElementById('closeCheckoutBtn');
+  const checkoutNextBtn = document.getElementById('checkoutNextBtn');
+  const checkoutBackBtn = document.getElementById('checkoutBackBtn');
+  const checkoutStepContent = document.getElementById('checkoutStepContent');
+
+  let checkoutStep = 1;
+  let checkoutPreview = null;
+  let selectedPayment = 'upi';
+  let abandonmentTimer = null;
+  let checkoutStarted = false;
+
+  function clearAbandonmentTimer() {
+    if (abandonmentTimer) {
+      clearTimeout(abandonmentTimer);
+      abandonmentTimer = null;
+    }
+  }
+
+  function startAbandonmentTimer() {
+    clearAbandonmentTimer();
+    checkoutStarted = false;
+
+    abandonmentTimer = setTimeout(async () => {
+      if (checkoutStarted) return;
+
+      const customerId = customerSelect.value;
+      try {
+        const res = await fetch('/api/checkout/abandonment-nudge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            channel: currentChannel,
+            seconds_open: 30
+          })
+        });
+        const data = await res.json();
+
+        if (nbaBanner && data.nudge) {
+          nbaBanner.classList.add('abandonment-nudge');
+          document.getElementById('nbaMessage').textContent =
+            `${data.nudge.message} ${data.nudge.discount_hint || ''}`;
+          nbaBanner.style.display = 'flex';
+        }
+        appendLog('Cart Abandonment NBA', data.nudge?.message || 'Nudge triggered', 'system');
+      } catch (err) {
+        console.error('Abandonment nudge failed:', err);
+      }
+    }, 30000);
+  }
+
+  function updateCheckoutStepUI() {
+    document.querySelectorAll('.checkout-step').forEach(el => {
+      const step = parseInt(el.dataset.step, 10);
+      el.classList.remove('active', 'done');
+      if (step < checkoutStep) el.classList.add('done');
+      if (step === checkoutStep) el.classList.add('active');
+    });
+    checkoutBackBtn.style.display = checkoutStep > 1 && checkoutStep < 4 ? 'inline-block' : 'none';
+    checkoutNextBtn.textContent =
+      checkoutStep === 3 ? 'Pay Now' :
+      checkoutStep === 4 ? 'Done' : 'Continue';
+  }
+
+  async function loadCheckoutPreview() {
+    const customerId = customerSelect.value;
+    const res = await fetch(`/api/checkout/preview/${customerId}`);
+    checkoutPreview = await res.json();
+    if (!res.ok) throw new Error(checkoutPreview.detail || 'Preview failed');
+    return checkoutPreview;
+  }
+
+  function renderCheckoutStep() {
+    updateCheckoutStepUI();
+    const s = checkoutPreview?.cart_summary || {};
+
+    if (checkoutStep === 1) {
+      checkoutStepContent.innerHTML = `
+        <h4>Cart Review</h4>
+        <p style="font-size:0.85rem;color:var(--text-muted);">Review items before checkout.</p>
+        <div class="cart-items-list" style="margin-top:0.75rem;">
+          ${(s.cart_items || []).map(i => `
+            <div class="cart-item">
+              <div><div class="cart-item-name">${i.name}</div><div style="font-size:0.7rem;color:var(--text-muted);">${i.type}</div></div>
+              <div class="cart-item-price">₹${i.price.toFixed(2)}</div>
+            </div>`).join('') || '<p>Cart is empty.</p>'}
+        </div>
+        <div class="cart-summary" style="margin-top:1rem;">
+          <div class="summary-row"><span>Subtotal</span><span>${s.subtotal_base || '-'}</span></div>
+          <div class="summary-row discount"><span>Discount</span><span>-${(s.bundle_discount || '₹0.00').replace('₹','')}</span></div>
+          <div class="summary-row total"><span>Total</span><span>${s.total || '-'}</span></div>
+        </div>`;
+    }
+
+    if (checkoutStep === 2) {
+      const suggestions = checkoutPreview?.bundle_suggestions || [];
+      checkoutStepContent.innerHTML = `
+        <h4>Bundle Optimization</h4>
+        <p style="font-size:0.85rem;color:var(--text-muted);">AI-optimized pricing for your cart.</p>
+        ${s.applied_nudge ? `<div class="nudge-box"><span class="nudge-icon">🎉</span><span>${s.applied_nudge}</span></div>` : ''}
+        <ul style="margin-top:0.75rem;font-size:0.85rem;padding-left:1.2rem;">
+          ${suggestions.map(x => `<li>${x.message}</li>`).join('') || '<li>No extra optimizations needed.</li>'}
+        </ul>`;
+    }
+
+    if (checkoutStep === 3) {
+      const upi = checkoutPreview?.subscriber?.upi_id || 'rahul.sharma@okicici';
+      checkoutStepContent.innerHTML = `
+        <h4>Payment Method</h4>
+        <div class="checkout-payment-options">
+          <label class="payment-option selected" data-method="upi">
+            <input type="radio" name="pay" value="upi" checked> 📱 UPI (${upi})
+          </label>
+          <label class="payment-option" data-method="card">
+            <input type="radio" name="pay" value="card"> 💳 Credit / Debit Card
+          </label>
+          <label class="payment-option" data-method="netbanking">
+            <input type="radio" name="pay" value="netbanking"> 🏦 Net Banking
+          </label>
+        </div>`;
+
+      checkoutStepContent.querySelectorAll('.payment-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          checkoutStepContent.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+          selectedPayment = opt.dataset.method;
+        });
+      });
+    }
+
+    if (checkoutStep === 4 && checkoutPreview?.confirmation) {
+      const c = checkoutPreview.confirmation;
+      checkoutStepContent.innerHTML = `
+        <div class="checkout-success">
+          <div style="font-size:2.5rem;">✅</div>
+          <h4>Order Confirmed!</h4>
+          <div class="order-id">${c.order_id}</div>
+          <p style="font-size:0.85rem;color:var(--text-muted);">${c.message}</p>
+          <p style="font-size:0.8rem;margin-top:0.5rem;">Txn: ${c.payment?.transaction_id}</p>
+        </div>`;
+    }
+  }
+
+  async function openCheckoutWizard() {
+    checkoutStarted = true;
+    clearAbandonmentTimer();
+    checkoutStep = 1;
+    selectedPayment = 'upi';
+
+    try {
+      await loadCheckoutPreview();
+      if (checkoutPreview.status === 'empty_cart') {
+        appendMessage('⚠️ Your cart is empty. Add items before checkout.', 'assistant');
+        return;
+      }
+      checkoutModal.style.display = 'flex';
+      renderCheckoutStep();
+      appendLog('Checkout Funnel', 'Step 1: Cart review started', 'system');
+    } catch (err) {
+      appendMessage(`⚠️ Checkout error: ${err.message}`, 'assistant');
+    }
+  }
+
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', openCheckoutWizard);
+  }
+
+  if (closeCheckoutBtn) {
+    closeCheckoutBtn.addEventListener('click', () => {
+      checkoutModal.style.display = 'none';
+    });
+  }
+
+  if (checkoutBackBtn) {
+    checkoutBackBtn.addEventListener('click', () => {
+      if (checkoutStep > 1) {
+        checkoutStep--;
+        renderCheckoutStep();
+      }
+    });
+  }
+
+  if (checkoutNextBtn) {
+    checkoutNextBtn.addEventListener('click', async () => {
+      if (checkoutStep === 3) {
+        checkoutNextBtn.disabled = true;
+        try {
+          const res = await fetch('/api/checkout/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customer_id: customerSelect.value,
+              payment_method: selectedPayment,
+              channel: currentChannel
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Payment failed');
+
+          checkoutPreview.confirmation = data;
+          checkoutStep = 4;
+          renderCheckoutStep();
+
+          appendLog('Conversion Event', `Order ${data.order_id} — ${data.payment?.amount_paid}`, 'system');
+          fetchCart();
+        } catch (err) {
+          appendMessage(`⚠️ Payment failed: ${err.message}`, 'assistant');
+        } finally {
+          checkoutNextBtn.disabled = false;
+        }
+        return;
+      }
+
+      if (checkoutStep === 4) {
+        checkoutModal.style.display = 'none';
+        cartDrawer.classList.remove('open');
+        appendMessage(`🎉 **Checkout complete!** Your order is synced across ${currentChannel}.`, 'assistant');
+        return;
+      }
+
+      checkoutStep++;
+      renderCheckoutStep();
+      appendLog('Checkout Funnel', `Advanced to step ${checkoutStep}`, 'system');
+    });
+  }
+
   // Quick Prompt Chips Click Handler
   promptChips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -257,6 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Clear Chat Handler
   clearChatBtn.addEventListener('click', () => {
+    chatThreadId = `session_${Date.now()}`;
     messagesContainer.innerHTML = `
       <div class="message assistant-message">
         <div class="avatar">DT</div>
@@ -334,7 +567,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: promptText, customer_id: customerId })
+        body: JSON.stringify({
+          message: promptText,
+          customer_id: customerId,
+          thread_id: chatThreadId,
+        })
       });
 
       const data = await response.json();
@@ -357,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Render Assistant Response
-      appendMessage(data.response, 'assistant', data.tool_outputs);
+      appendMessage(data.response, 'assistant');
 
       // Trigger HITL Banner if human approval is required
       if (data.requires_human_approval && hitlBanner) {
@@ -373,23 +610,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // UI Helper Functions
-  function appendMessage(text, sender, toolOutputs = []) {
+  function appendMessage(text, sender) {
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', `${sender}-message`);
 
     const avatarText = sender === 'user' ? 'YOU' : 'DT';
-    
-    let toolCardsHTML = '';
-    if (toolOutputs && toolOutputs.length > 0) {
-      toolOutputs.forEach(tool => {
-        toolCardsHTML += `
-          <div class="tool-output-card">
-            <strong>⚙️ Executed Tool [${tool.tool}]:</strong>
-            <pre>${escapeHtml(tool.output)}</pre>
-          </div>
-        `;
-      });
-    }
 
     let feedbackHTML = '';
     if (sender === 'assistant') {
@@ -406,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="avatar">${avatarText}</div>
       <div class="message-content">
         <p>${formatMarkdown(text)}</p>
-        ${toolCardsHTML}
         ${feedbackHTML}
       </div>
     `;

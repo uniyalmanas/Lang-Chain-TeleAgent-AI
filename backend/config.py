@@ -25,7 +25,7 @@ def get_llm(model_provider: str = "auto"):
             return ChatGroq(
                 model_name="llama-3.3-70b-versatile",
                 groq_api_key=GROQ_API_KEY,
-                temperature=0.2
+                temperature=0.4
             )
         except Exception as e:
             print(f"Warning: Could not initialize Groq LLM: {e}")
@@ -36,7 +36,7 @@ def get_llm(model_provider: str = "auto"):
             return ChatGoogleGenerativeAI(
                 model="gemini-1.5-flash",
                 google_api_key=GEMINI_API_KEY,
-                temperature=0.2
+                temperature=0.4
             )
         except Exception as e:
             print(f"Warning: Could not initialize Gemini LLM: {e}")

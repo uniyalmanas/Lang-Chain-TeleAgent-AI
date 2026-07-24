@@ -284,6 +284,64 @@ body {
   overflow: hidden;
 }
 
+.engine-top {
+  flex-shrink: 0;
+}
+
+.workspace-split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.quick-picks-panel {
+  flex: 0 0 38%;
+  max-width: 460px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--bg-card-border);
+  background: rgba(255, 255, 255, 0.01);
+  overflow: hidden;
+}
+
+.quick-picks-heading {
+  flex-shrink: 0;
+  padding: 0.65rem 1rem 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ai-chat-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 280px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-panel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.chat-panel-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -321,21 +379,25 @@ body {
 /* Prompt Chips */
 .quick-prompts {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  overflow-x: auto;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.25rem 1rem 1rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .prompt-chip {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-main);
-  padding: 0.4rem 0.85rem;
-  border-radius: 20px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
   font-size: 0.78rem;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.35;
   transition: all 0.2s ease;
 }
 
@@ -620,6 +682,34 @@ body.mode-oneapp .chat-section {
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 24px var(--dt-magenta-glow);
   position: relative;
   overflow: hidden;
+}
+
+body.mode-oneapp .workspace-split {
+  flex-direction: column;
+}
+
+body.mode-oneapp .quick-picks-panel {
+  flex: 0 0 auto;
+  max-width: none;
+  min-width: 0;
+  border-right: none;
+  border-bottom: 1px solid var(--bg-card-border);
+  max-height: 38%;
+}
+
+body.mode-oneapp .quick-prompts {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+body.mode-oneapp .prompt-chip {
+  width: auto;
+  flex: 1 1 auto;
+}
+
+body.mode-oneapp .ai-chat-panel {
+  flex: 1;
+  min-width: 0;
 }
 
 body.mode-oneapp .chat-section::before {
@@ -964,4 +1054,85 @@ body.mode-oneapp .channel-indicator-bar {
   line-height: 1.5;
 }
 
+/* Checkout Wizard */
+.checkout-modal {
+  max-width: 520px;
+  width: 95%;
+}
+
+.checkout-steps {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--bg-card-border);
+}
+
+.checkout-step {
+  flex: 1;
+  text-align: center;
+  font-size: 0.68rem;
+  padding: 0.35rem 0.25rem;
+  border-radius: 6px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.checkout-step.active {
+  color: #fff;
+  background: rgba(226, 0, 116, 0.25);
+  border: 1px solid rgba(226, 0, 116, 0.4);
+}
+
+.checkout-step.done {
+  color: #4ADE80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.checkout-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--bg-card-border);
+}
+
+.checkout-payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.payment-option.selected {
+  border-color: var(--dt-cyan);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.checkout-success {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.checkout-success .order-id {
+  font-family: var(--font-mono);
+  color: var(--dt-cyan);
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+}
+
+.nba-banner.abandonment-nudge {
+  border-color: rgba(234, 179, 8, 0.5);
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.12), rgba(226, 0, 116, 0.12));
+}
 
