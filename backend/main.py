@@ -1,7 +1,9 @@
 import os
 import sys
 import site
+import logging
 
+logger = logging.getLogger("dtdl_teleagent")
 # Ensure user site-packages are in sys.path
 user_site = site.getusersitepackages()
 if user_site not in sys.path:
@@ -20,7 +22,6 @@ app = FastAPI(title="DTDL TeleAgent - Multi-Agent AI Platform", version="1.0.0")
 # Enable CORS for local web development
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["*"],
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -98,9 +99,11 @@ def chat_endpoint(request: ChatRequest):
             "requires_human_approval": final_state.get("requires_human_approval", False),
             "pending_tool_call": final_state.get("pending_tool_call")
         }
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
+        logger.error(f"Agent workflow failure [thread_id={request.thread_id}]: {e}")
+        raise HTTPException(status_code=500, detail="Something went wrong while processing your request. Our team has been notified.")
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"Error executing agent workflow: {str(e)}")
 
 @app.get("/api/cart/{customer_id}")
 def get_cart(customer_id: str):
