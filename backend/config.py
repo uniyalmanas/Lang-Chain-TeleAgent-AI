@@ -1,12 +1,5 @@
 import os
 import sys
-import site
-
-# Ensure user site-packages are in sys.path
-user_site = site.getusersitepackages()
-if user_site not in sys.path:
-    sys.path.insert(0, user_site)
-
 from dotenv import load_dotenv
 
 load_dotenv()
