@@ -20,7 +20,8 @@ app = FastAPI(title="DTDL TeleAgent - Multi-Agent AI Platform", version="1.0.0")
 # Enable CORS for local web development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # allow_origins=["*"],
+    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
