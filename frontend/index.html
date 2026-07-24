@@ -371,7 +371,12 @@
                   <p>Hybrid LLM Routing (Groq Llama 3.3 / Gemini 1.5) • BNetzA SLA Compliant</p>
                 </div>
               </div>
-              <button class="clear-btn" id="clearChatBtn">Clear Session</button>
+              <div class="chat-header-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+                <button class="tts-toggle-btn active" id="ttsToggleBtn" title="Toggle AI Voice Response" style="background: rgba(226, 0, 116, 0.15); border: 1px solid var(--dt-magenta); color: var(--dt-magenta-light); font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: var(--radius-full); cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: var(--transition-fast);">
+                  <span id="ttsIcon">🔊</span> <span id="ttsText">Voice: ON</span>
+                </button>
+                <button class="clear-btn" id="clearChatBtn">Clear Session</button>
+              </div>
             </div>
 
             <!-- Proactive Next Best Action Banner -->

@@ -79,6 +79,94 @@ document.addEventListener('DOMContentLoaded', () => {
   // State Variables
   let currentChannel = 'OneShop Web';
   let currentAbVariant = 'Variant A (Discount Focus)';
+  let isTtsEnabled = true;
+
+  // Text-to-Speech (TTS) Voice Engine
+  const ttsToggleBtn = document.getElementById('ttsToggleBtn');
+  const ttsIcon = document.getElementById('ttsIcon');
+  const ttsText = document.getElementById('ttsText');
+
+  if (ttsToggleBtn) {
+    ttsToggleBtn.addEventListener('click', () => {
+      isTtsEnabled = !isTtsEnabled;
+      if (isTtsEnabled) {
+        ttsToggleBtn.classList.add('active');
+        ttsToggleBtn.style.background = 'rgba(226, 0, 116, 0.15)';
+        ttsToggleBtn.style.borderColor = 'var(--dt-magenta)';
+        ttsToggleBtn.style.color = 'var(--dt-magenta-light)';
+        if (ttsIcon) ttsIcon.textContent = '🔊';
+        if (ttsText) ttsText.textContent = 'Voice: ON';
+        speakText('AI Voice speech enabled.');
+      } else {
+        ttsToggleBtn.classList.remove('active');
+        ttsToggleBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+        ttsToggleBtn.style.borderColor = 'var(--border-subtle)';
+        ttsToggleBtn.style.color = 'var(--text-muted)';
+        if (ttsIcon) ttsIcon.textContent = '🔇';
+        if (ttsText) ttsText.textContent = 'Voice: OFF';
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      }
+    });
+  }
+
+  window.speakText = function(text) {
+    if (!isTtsEnabled || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const cleanText = text
+        .replace(/<[^>]*>/g, '')
+        .replace(/\*\*/g, '')
+        .replace(/`/g, '')
+        .replace(/#+/g, '')
+        .trim();
+
+      if (!cleanText) return;
+
+      const utterance = new SpeechSynthesisUtterance(cleanText.substring(0, 350));
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('David') || v.name.includes('Zira')));
+      if (englishVoice) {
+        utterance.voice = englishVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error('Speech Synthesis error:', e);
+    }
+  };
+
+  function appendMessage(text, sender, toolOutputs = []) {
+    if (!messagesContainer) return;
+
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', `${sender}-message`);
+    const avatarContent = sender === 'user' ? 'YOU' : '<img src="public/logo.png" alt="Logo" style="max-width: 100%; max-height: 100%;">';
+    
+    let toolCardsHTML = '';
+    if (toolOutputs && toolOutputs.length > 0) {
+      toolOutputs.forEach(tool => {
+        toolCardsHTML += renderToolOutputHTML(tool);
+      });
+    }
+
+    let feedbackHTML = '';
+    if (sender === 'assistant') {
+      const escapedTextForSpeech = escapeHtml(text).replace(/'/g, "\\'");
+      feedbackHTML = `
+        <div class="feedback-actions" style="margin-top:0.6rem; padding-top:0.4rem; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; color:var(--text-muted);">
+          <span>Rate Answer:</span>
+          <button class="feedback-btn" onclick="handleFeedback(this, 'like')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); color:#fff; border-radius:4px; padding:0.15rem 0.45rem; cursor:pointer; font-size:0.75rem;">👍 Helpful</button>
+          <button class="feedback-btn" onclick="handleFeedback(this, 'dislike')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); color:#fff; border-radius:4px; padding:0.15rem 0.45rem; cursor:pointer; font-size:0.75rem;">👎 Needs Work</button>
+          <button class="speak-msg-btn" onclick="speakText('${escapedTextForSpeech}')" style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.25); color:var(--dt-cyan); border-radius:4px; padding:0.15rem 0.45rem; cursor:pointer; font-size:0.75rem; margin-left:auto; display:flex; align-items:center; gap:0.25rem;">🔊 Replay Voice</button>
+        </div>
+      `;
+      speakText(text);
+    }
 
   // Core UI Elements
   const customerSelect = document.getElementById('customerSelect');
