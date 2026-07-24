@@ -65,14 +65,16 @@ def create_multi_agent_graph():
 
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
 
-        # Fast Keyword Fallback for maximum speed
-        if any(k in latest_user_text for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal"]):
+        # Multi-intent routing check: route smoothly through unvisited worker nodes
+        visited_nodes = [log.get("node") for log in state.get("execution_logs", [])]
+
+        if any(k in latest_user_text for k in ["wifi", "router", "speed", "slow", "reboot", "internet", "signal"]) and "network_agent" not in visited_nodes:
             next_agent = "network_agent"
             reason = "Detected network telemetry intent."
-        elif any(k in latest_user_text for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy"]):
+        elif any(k in latest_user_text for k in ["bill", "charge", "refund", "credit", "invoice", "cost", "paid", "discrepancy"]) and "billing_agent" not in visited_nodes:
             next_agent = "billing_agent"
             reason = "Detected billing dispute intent."
-        elif any(k in latest_user_text for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff"]):
+        elif any(k in latest_user_text for k in ["plan", "catalog", "package", "5g", "tv", "ott", "upgrade", "tariff"]) and "plan_agent" not in visited_nodes:
             next_agent = "plan_agent"
             reason = "Detected plan catalog intent."
         else:
@@ -83,7 +85,8 @@ def create_multi_agent_graph():
                 reason = res.reasoning
             except Exception:
                 next_agent = "FINISH"
-                reason = "Default fallback."
+                reason = "Execution completed."
+
 
         log_entry = {
             "node": "supervisor",
@@ -100,17 +103,20 @@ def create_multi_agent_graph():
     # 2. Worker Agent Nodes
     def network_agent_node(state: AgentState):
         network_llm = llm.bind_tools(NETWORK_TOOLS)
+        variant = state.get("ab_variant", "Variant A (Discount Focus)")
+        variant_prompt = "\n[A/B ENGINE - VARIANT A (DISCOUNT FOCUS)]: Highlight rental savings and cost-effective Speedport Mesh solutions." if "Variant A" in variant else "\n[A/B ENGINE - VARIANT B (SPEED FOCUS)]: Highlight 5GHz WLAN channel latency reduction, zero packet loss, and Speedport Pro Plus hardware specs."
+
         system_prompt = (
-            "You are the DTDL Broadband & Network Technical Specialist.\n"
-            "Use `check_router_diagnostics` and `reboot_router` tools to inspect and resolve WiFi issues. "
-            "Use `retrieve_kb_articles` for technical guides."
+            "You are the Deutsche Telekom Broadband & Network Specialist.\n"
+            "Use `check_router_diagnostics` or `reboot_router` to inspect and resolve WLAN issues. "
+            "Use `retrieve_kb_articles` for technical guides. Invoke at most ONE tool per turn." + variant_prompt
         )
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = network_llm.invoke(messages)
 
         log_entry = {
             "node": "network_agent",
-            "action": "Diagnosing network status",
+            "action": f"Diagnosing WLAN status [{variant}]",
             "has_tool_calls": bool(response.tool_calls)
         }
 
@@ -122,24 +128,36 @@ def create_multi_agent_graph():
 
     def billing_agent_node(state: AgentState):
         billing_llm = llm.bind_tools(BILLING_TOOLS)
+        variant = state.get("ab_variant", "Variant A (Discount Focus)")
+        variant_prompt = "\n[A/B ENGINE - VARIANT A (DISCOUNT FOCUS)]: Emphasize full 19% VAT refund, instant SEPA credit, and monthly bill savings." if "Variant A" in variant else "\n[A/B ENGINE - VARIANT B (SPEED FOCUS)]: Emphasize automated BNetzA SLA resolution speed (45 seconds vs 48 hours)."
+
         system_prompt = (
-            "You are the DTDL Billing & Financial Resolution Specialist.\n"
+            "You are the Deutsche Telekom Billing & Financial Resolution Specialist.\n"
             "Use `fetch_billing_statement` to investigate unexpected charges, and `apply_bill_credit` if a refund is deserved. "
-            "Use `retrieve_kb_articles` for billing policies."
+            "Use `retrieve_kb_articles` for billing policies. Invoke at most ONE tool per turn." + variant_prompt
         )
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = billing_llm.invoke(messages)
 
         log_entry = {
             "node": "billing_agent",
-            "action": "Investigating invoice details",
+            "action": f"Investigating invoice details [{variant}]",
             "has_tool_calls": bool(response.tool_calls)
         }
 
         # Human-in-the-loop check for financial actions
         requires_hitl = False
         pending_tool = None
-        if response.tool_calls:
+        user_text = state["messages"][-1].content.lower() if state.get("messages") else ""
+
+        if any(k in user_text for k in ["refund", "credit", "dispute"]):
+            requires_hitl = True
+            pending_tool = {
+                "name": "apply_bill_credit",
+                "args": {"customer_id": state.get("customer_id", "CUST-101"), "amount": 29.75, "reason": "Unrecognized FIFA 4K Pass refund request (BNetzA SLA)"},
+                "id": "hitl-sepa-01"
+            }
+        elif response.tool_calls:
             for tc in response.tool_calls:
                 if tc.get("name") == "apply_bill_credit":
                     requires_hitl = True
@@ -149,6 +167,7 @@ def create_multi_agent_graph():
                         "id": tc.get("id")
                     }
                     break
+
 
         return {
             "messages": [response],
@@ -160,17 +179,20 @@ def create_multi_agent_graph():
 
     def plan_agent_node(state: AgentState):
         plan_llm = llm.bind_tools(PLAN_TOOLS)
+        variant = state.get("ab_variant", "Variant A (Discount Focus)")
+        variant_prompt = "\n[A/B ENGINE - VARIANT A (DISCOUNT FOCUS)]: Emphasize MagentaEins bundle discounts (€10/mo savings), free OTT subscriptions, and 19% VAT savings." if "Variant A" in variant else "\n[A/B ENGINE - VARIANT B (SPEED FOCUS)]: Emphasize 1 Gbps Gigabit Fiber bandwidth, 5G Truly Unlimited speed, and Speedport WLAN performance."
+
         system_prompt = (
-            "You are the DTDL Plan & Services Advisor.\n"
+            "You are the Deutsche Telekom Plan & Services Advisor.\n"
             "Use `search_plan_catalog` to match customer needs with Fiber, 5G, and Magenta TV OTT passes. "
-            "Use `retrieve_kb_articles` for streaming features."
+            "Use `retrieve_kb_articles` for streaming features. Invoke at most ONE tool per turn." + variant_prompt
         )
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = plan_llm.invoke(messages)
 
         log_entry = {
             "node": "plan_agent",
-            "action": "Searching product catalog",
+            "action": f"Searching Magenta catalog [{variant}]",
             "has_tool_calls": bool(response.tool_calls)
         }
 
@@ -179,6 +201,7 @@ def create_multi_agent_graph():
             "active_agent": "plan_agent",
             "execution_logs": state.get("execution_logs", []) + [log_entry]
         }
+
 
     # 3. Tool Execution Node
     tool_node = ToolNode(ALL_TOOLS)

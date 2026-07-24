@@ -40,11 +40,16 @@ class ChatRequest(BaseModel):
     message: str
     customer_id: str = "CUST-101"
     thread_id: str = "session_default"
+    ab_variant: str = "Variant A (Discount Focus)"
 
 class ApproveRequest(BaseModel):
     thread_id: str = "session_default"
     approved: bool = True
     customer_id: str = "CUST-101"
+
+class FeedbackRequest(BaseModel):
+    customer_id: str = "CUST-101"
+    rating: str = "like"
 
 @app.get("/api/health")
 def health_check():
@@ -53,6 +58,17 @@ def health_check():
         "service": "Deutsche Telekom Digital Labs TeleAgent AI Engine",
         "version": "1.0.0"
     }
+
+@app.post("/api/feedback")
+def submit_feedback(request: FeedbackRequest):
+    print(f"[RLHF FEEDBACK] customer={request.customer_id} rating={request.rating}")
+    return {
+        "status": "logged",
+        "customer_id": request.customer_id,
+        "rating": request.rating,
+        "reward_signal": 1.0 if request.rating == "like" else -1.0
+    }
+
 
 @app.post("/api/chat")
 def chat_endpoint(request: ChatRequest):
@@ -69,9 +85,11 @@ def chat_endpoint(request: ChatRequest):
         "active_agent": "supervisor",
         "execution_logs": [],
         "customer_id": request.customer_id,
+        "ab_variant": request.ab_variant,
         "requires_human_approval": False,
         "pending_tool_call": None
     }
+
 
     config = {"configurable": {"thread_id": request.thread_id}}
 
